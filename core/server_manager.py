@@ -1,22 +1,25 @@
-from servers.linux import LinuxServer
 import yaml
-import os
 
-CONFIG_DIR = "data/server_configs"
+from servers.linux import LinuxServerManager
 
-def load_server_config(name: str) -> dict:
-    path = os.path.join(CONFIG_DIR, f"{name}.yaml")
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Server config not found: {name}")
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
 
-def start_server(name: str):
-    config = load_server_config(name)
-    server = LinuxServer(config)
-    return server.start()
+class ServerManager:
+    def __init__(self, settings_path="config/settings.yaml"):
+        with open(settings_path, "r") as f:
+            self.settings = yaml.safe_load(f)
+        self.base_path = self.settings["default_server_path"]
+        self.server_version = self.settings["server_version"]
 
-def stop_server(name: str):
-    config = load_server_config(name)
-    server = LinuxServer(config)
-    return server.stop()
+    def load_server_config(self, config_path):
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+
+    def start_server(self, config_path):
+        config = self.load_server_config(config_path)
+        linux_manager = LinuxServerManager(config, self.base_path, self.server_version)
+        return linux_manager.start_server()
+
+    def stop_server(self, config_path):
+        config = self.load_server_config(config_path)
+        linux_manager = LinuxServerManager(config, self.base_path, self.server_version)
+        return linux_manager.stop_server()

@@ -1,8 +1,14 @@
-from fastapi import FastAPI
-from api.endpoints import router as api_router
+from core.cli import CLIManager
 from utils.logger import setup_logger
 
-app = FastAPI(title="Minecraft Cloud Controller")
-app.include_router(api_router)
+"""
+Achtung dies ist nur ein Grobes Konzept. Es ist Keine Funktion gewährleistet.
+"""
 
-setup_logger()
+def main():
+    setup_logger()
+    cli = CLIManager()
+    cli.show_menu()
+
+if __name__ == "__main__":
+    main()

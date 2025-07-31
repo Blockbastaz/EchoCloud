@@ -1,0 +1,6 @@
+# Beispiel Config von Lobby-1
+server_type: "Lobby"
+server_name: "Lobby-1"
+java_memory:
+  Xmx: "2760M"
+  Xms: "2760M"

@@ -1,7 +1,7 @@
-default_server_path: "/Cloud/static/running"
-default_java_path: "/usr/bin/java"
-default_screen_prefix: "mc_"
+default_server_path: "../Cloud/running/static"
+server_version: "paper-1.21.1-133.jar"
+
 log_level: "INFO"
 
-# Zeit in Sekunden, um nach dem Start zu prüfen, ob der Server online ist
+# Zeit in Sekunden, um nach dem Start zu prüfen, ob der Server online ist. Sollte in Zukunft Erhöht werden. Aktuell keine Funktion!
 server_check_delay: 10
