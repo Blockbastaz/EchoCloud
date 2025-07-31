@@ -1,0 +1,7 @@
+default_server_path: "/Cloud/static/running"
+default_java_path: "/usr/bin/java"
+default_screen_prefix: "mc_"
+log_level: "INFO"
+
+# Zeit in Sekunden, um nach dem Start zu prüfen, ob der Server online ist
+server_check_delay: 10
