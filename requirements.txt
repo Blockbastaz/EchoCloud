@@ -1,2 +1,6 @@
 fastapi~=0.116.1
 PyYAML~=6.0.2
+rich~=14.0.0
+DateTime~=5.5
+paramiko~=3.5.1
+watchdog~=6.0.0
