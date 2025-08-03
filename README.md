@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://github.com/Blockbastaz/EchoCloud/blob/main/data/logo.jpg" alt="EchoCloud Logo" width="200"/>
+  <img src="https://github.com/Blockbastaz/EchoCloud/blob/main/data/logo.png" alt="EchoCloud Logo" width="200"/>
 </p>
 
 <h1 align="center">EchoCloud</h1>
 
 <p align="center">
-  <strong>Ein modulares Command-Line-Tool zur Verwaltung und Interaktion mit EchoCloud-Servern.</strong><br/>
+  <strong>Ein modulares Command-Line-Tool zur Verwaltung und Interaktion mit Minecraft-Servern.</strong><br/>
   <em>⚠️ Aktueller Entwicklungsstatus: Frühphase – noch nicht einsatzbereit!</em>
 </p>
 
@@ -38,7 +38,7 @@ Die Anwendung bietet:
 
 ### 🐧 Linux / macOS
 ```bash
-git clone https://github.com/dein-benutzername/EchoCloud.git
+git clone https://github.com/Blockbastaz/EchoCloud.git
 cd EchoCloud/EchoCloud
 chmod +x install.sh
 ./install.sh

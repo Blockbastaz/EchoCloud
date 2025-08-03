@@ -4,7 +4,6 @@ from rich.prompt import Prompt
 
 import core
 import core.console as utils
-from core.console import pInfo
 from core.server_manager import ServerManager
 
 if TYPE_CHECKING:
@@ -81,47 +80,96 @@ class CommandManager:
         else:
             utils.pWarning("Kein Server ausgewählt. Nutze 'servers' um Server anzuzeigen.")
 
+    # TEST
     def cmd_servers(self, args):
         """Listet alle verfügbaren Server auf"""
-        utils.pInfo(f"Verfügbare Server: {len(self.server_manager.servers)}")
-        for srv in self.server_manager.servers:
-            utils.pInfo(f"TODO")
-            #TODO
+        if not self.server_manager.servers:
+            utils.pInfo("Keine Server gefunden.")
+            return
 
+        utils.pInfo("Verfügbare Server:")
+        for server in self.server_manager.servers:
+            status = "[green]🟢 Online[/green]" if server.is_running else "[red]🔴 Offline[/red]"
+            utils.pInfo(f" - [cyan]{server.server_id}[/cyan]: {server.name} ({status})")
+    # TEST
     def cmd_select(self, args):
         """Wählt einen Server zum Verwalten aus"""
         if not args:
             utils.pWarning("Bitte Server-ID angeben: select <server_id>")
             return
-        if args in self.modules:
-            self.selected_server = self.modules[args]
-            utils.pInfo(f"Server [cyan]{args}[/cyan] ausgewählt.")
+
+        server = self.server_manager.get_server_by_id(args)
+        if server:
+            self.selected_server = server
+            utils.pInfo(f"Server [cyan]{server.name}[/cyan] wurde ausgewählt.")
         else:
-            utils.pWarning("Server nicht gefunden.")
+            utils.pWarning(f"Server mit ID '{args}' wurde nicht gefunden.")
 
+    # TEST
     def cmd_config(self, args):
-        """Zeigt oder setzt Konfigurationen am Server"""
-        pInfo("TODO!")
-        #TODO
+        """Zeigt Konfiguration des Servers"""
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
 
+        #TODO Gesamte Konfiguration des Server anzeigen!
+        utils.pInfo("Server-Konfiguration:")
+        for key, value in self.selected_server.java_memory.items():
+            utils.pInfo(f"  {key}: {value}")
+
+    # TEST
     def cmd_start(self, args):
         """Startet den ausgewählten Server"""
-        pInfo("TODO!")
-        #TODO
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
 
+        if self.selected_server.is_running:
+            utils.pWarning("Server läuft bereits.")
+            return
+
+        result = self.server_manager.start_server(self.selected_server.config_path)
+        if result:
+            self.selected_server.start()
+        else:
+            utils.pError("Start fehlgeschlagen.")
+
+    # TEST
     def cmd_stop(self, args):
         """Stoppt den ausgewählten Server"""
-        pInfo("TODO!")
-        #TODO
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
 
+        if not self.selected_server.is_running:
+            utils.pWarning("Server ist bereits gestoppt.")
+            return
+
+        result = self.server_manager.stop_server(self.selected_server.config_path)
+        if result:
+            self.selected_server.stop()
+        else:
+            utils.pError("Stop fehlgeschlagen.")
+
+    # TEST
     def cmd_logs(self, args):
-        """Zeigt Logs des ausgewählten Servers"""
-        pInfo("TODO!")
-        #TODO
+        """Zeigt letzte Log-Zeilen des Servers"""
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
 
+        if not self.selected_server.last_output_lines:
+            utils.pInfo("Keine Logs verfügbar.")
+            return
+
+    #TODO server reloaden via /reload
     def cmd_reload(self, args):
-        utils.pInfo("TODO!")
-        #TODO
+        """Lädt Server-Konfiguration neu"""
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
+
+        utils.pInfo(f"TODO!")
 
     def cmd_debug(self, args):
         tmp = not core.debug_mode
