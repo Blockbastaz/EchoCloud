@@ -2,7 +2,7 @@ from typing import AnyStr
 
 from rich.console import Console
 from rich.prompt import Prompt
-from core import debugMode
+from core import debug_mode
 
 console = Console()
 
@@ -32,9 +32,9 @@ def pError(text: str):
 
 
 def pDebug(text: str):
-    if not debugMode:
-        return
-    console.print("[deep_sky_blue2][[/deep_sky_blue2][purple4]*[/purple4][deep_sky_blue2]][/deep_sky_blue2] [purple4]" + text + "[/purple4]")
+    if debug_mode:
+        console.print(
+            "[deep_sky_blue2][[/deep_sky_blue2][purple4]*[/purple4][deep_sky_blue2]][/deep_sky_blue2] [purple4]" + text + "[/purple4]")
 
 
 def pYesNoQuestion(text: str):

@@ -1,11 +1,19 @@
-default_server_path: "../Cloud/running/static"
-server_version: "paper-1.21.1-133.jar"
 
-# Zeit in Sekunden, um nach dem Start zu prüfen, ob der Server online ist. Sollte in Zukunft Erhöht werden. Aktuell keine Funktion!
-server_check_delay: 10
+server:
+  default_path: "../Cloud/running/static"
+  version: "paper-1.21.1-133.jar"
+  check_delay: 10            # Zeit in Sekunden nach Start, um den Online-Status zu prüfen
 
-# Aktiviert Entwickler Nachrichten.
-debug_mode: false
+cloud:
+  autoregister: true         # Server aus dem Standardpfad automatisch registrieren
+  debug_mode: false          # Entwicklernachrichten aktivieren
+  host: "localhost"          # Adresse von EchoCloud
+  port: 9989                 # Port von EchoCloud
 
-# EchoCloud Registriert Automatisch server aus dem Standart Server Pfad.
-autoregister: true
+network:
+  use_https: true            # HTTPS für Server-Kommunikation aktivieren
+  auto_cert: true            # HTTPS-Zertifikat automatisch generieren
+  cert_duration_days: 365    # Gültigkeitsdauer des Zertifikats
+  auth_config_path: "./config/auth_tokens.yaml"    # Pfad von auth_tokens.yaml
+  cert_file_path: "./config/cert.pem"              # Pfad zum Zertifikat
+  key_file_path: "./config/key.pem"                # Pfad zum Schlüssel des Zertifikats

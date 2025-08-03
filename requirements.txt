@@ -1,6 +1,9 @@
-fastapi~=0.116.1
+uvicorn~=0.35.0
 PyYAML~=6.0.2
+fastapi~=0.116.1
 rich~=14.0.0
 DateTime~=5.5
+cryptography~=44.0.2
 paramiko~=3.5.1
 watchdog~=6.0.0
+python-dotenv~=1.0.1

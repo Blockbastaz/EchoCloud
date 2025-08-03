@@ -83,7 +83,7 @@ class CommandManager:
 
     def cmd_servers(self, args):
         """Listet alle verfügbaren Server auf"""
-        utils.pInfo(f"Verfügbare Server: {len(self.modules)}")
+        utils.pInfo(f"Verfügbare Server: {len(self.server_manager.servers)}")
         for srv in self.server_manager.servers:
             utils.pInfo(f"TODO")
             #TODO
@@ -124,9 +124,11 @@ class CommandManager:
         #TODO
 
     def cmd_debug(self, args):
-        core.debugMode = not core.debugMode
-        if core.debugMode:
-            utils.pDebug("Debug Mode aktiviert")
+        tmp = not core.debug_mode
+        core.debug_mode = not core.debug_mode
+
+        if tmp:
+            utils.pInfo("Debug Mode aktiviert")
         else:
             utils.pInfo("Debug Mode deaktiviert")
 

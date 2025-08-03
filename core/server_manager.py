@@ -7,19 +7,18 @@ from pathlib import Path
 from core.console import pError, pWarning, pInfo
 from servers.linux import LinuxServerManager
 
-from core import settings
+from core import settings, get_section
 
 
 
 class ServerManager:
-    def __init__(self, settings_path="config/settings.yaml", server_config_dir="data/server_configs"):
+    def __init__(self, server_config_dir="./data/server_configs"):
 
         #Settings von Initializer Benutzen
         self.settings = settings
 
-        self.base_path: str = self.settings["default_server_path"]
-        self.server_version: str = self.settings["server_version"]
-        self.settings_path: str = settings_path
+        self.base_path: str = get_section("server", "default_path", "../Cloud/running/static")
+        self.server_version: str = get_section("server", "version", "not found")
         self.server_config_dir: Path = Path(server_config_dir)
         self.servers: List[Server] = []
 
@@ -34,7 +33,7 @@ class ServerManager:
             pWarning(f"Config-Verzeichnis {self.server_config_dir} existiert nicht.")
             return
 
-        configs = list(self.server_config_dir.glob("*.yml"))
+        configs = list(self.server_config_dir.glob("*.yaml"))
         if not configs:
             pInfo("Keine Server-Konfigurationen gefunden.")
             return
