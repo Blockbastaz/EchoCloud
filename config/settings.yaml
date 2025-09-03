@@ -13,6 +13,7 @@ cloud:
 network:
   use_https: true            # HTTPS für Server-Kommunikation aktivieren
   auto_cert: true            # HTTPS-Zertifikat automatisch generieren
+  auto_api: false            # API Automatisch beim start von EchoCloud Starten
   cert_duration_days: 365    # Gültigkeitsdauer des Zertifikats
   auth_config_path: "./config/auth_tokens.yaml"    # Pfad von auth_tokens.yaml
   cert_file_path: "./config/cert.pem"              # Pfad zum Zertifikat

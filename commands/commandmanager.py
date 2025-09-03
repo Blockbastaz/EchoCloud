@@ -5,13 +5,15 @@ from rich.prompt import Prompt
 import core
 import core.console as utils
 from core.server_manager import ServerManager
+from api.apimanager import APIManager
 
 if TYPE_CHECKING:
     from core.server_manager import Server
 
 class CommandManager:
-    def __init__(self, server_manager: 'ServerManager'):
+    def __init__(self, server_manager: 'ServerManager', api_manager: APIManager):
         self.server_manager: ServerManager = server_manager
+        self.api_manager = api_manager
         self.selected_server: Optional[Server] = None  # Module = Server Plugin
         self.commands: Dict[str, Callable[[str], None]] = {}
         self.command_infos: List[Tuple[str, str]] = []
@@ -28,6 +30,7 @@ class CommandManager:
         self.register_command("autoscan", self.cmd_autoscan)
         self.register_command("debug", self.cmd_debug)
         self.register_command("reload", self.cmd_reload)
+        self.register_command("startapi", self.cmd_startapi)
 
         self.add_default_commands()
 
@@ -43,6 +46,7 @@ class CommandManager:
         self.add_help_message("debug", "Debug Modus an/aus")
         self.add_help_message("autoscan", "Scannt nach neuen Servern")
         self.add_help_message("help", "Diese Hilfe anzeigen")
+        self.add_help_message("startapi", "Startet den API Webserver")
 
     def add_help_message(self, command: str,  info: str):
         self.command_infos.append((command, info))
@@ -186,4 +190,10 @@ class CommandManager:
         """Importiert automatisch neue Server"""
         self.server_manager.scan_servers()
         utils.pInfo(f"Server Erfolgreich gescannt.")
+
+
+    def cmd_startapi(self, args):
+        """Importiert automatisch neue Server"""
+        self.api_manager.start_in_thread()
+        utils.pInfo(f"API Webserver gestartet.")
 

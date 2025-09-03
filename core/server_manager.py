@@ -1,19 +1,20 @@
+import os
+import re
+import subprocess
+import sys
 from datetime import datetime
-from itertools import filterfalse
+from pathlib import Path
 from typing import List, Dict, Optional
 
 import yaml
-from pathlib import Path
-
-from core.console import pError, pWarning, pInfo
 from rich.prompt import Prompt
-import re
-import subprocess
 
 from core import settings, get_section
+from core.console import pError, pWarning, pInfo
+
 
 class ServerManager:
-    def __init__(self, server_config_dir="./data/server_configs"):
+    def __init__(self, server_config_dir="./data/server_configs", ):
 
         #Settings von Initializer Benutzen
         self.settings = settings
@@ -147,6 +148,14 @@ class ServerManager:
                 pInfo("Alle Configs wurden generiert.")
             else:
                 pInfo("OK, keine Configs erstellt.")
+
+            choice = Prompt.ask(r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du EchoCloud Jetzt Neustarten um alle AuthTokens Automatisch zu generieren?: ").strip().lower()
+            if choice == "y":
+                os.system("clear")
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+            else:
+                pInfo("OK.")
+
         else:
             pInfo("Keine Server gefunden.")
 

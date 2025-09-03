@@ -17,6 +17,7 @@ port: int = settings.get("network", {}).get("port", 9989)
 auth_config_path: str = settings.get("network", {}).get("auth_config_path", "config/auth_tokens.yaml")
 cert_file_path: Path = Path(settings.get("network", {}).get("cert_file_path", "./config/cert.pem"))
 key_file_path: Path = Path(settings.get("network", {}).get("key_file_path", "./config/key.pem"))
+auto_api: bool = settings.get("network", {}).get("auto_api", False)
 
 def get_section(section: str, key: str, default=None):
     return settings.get(section, {}).get(key, default)

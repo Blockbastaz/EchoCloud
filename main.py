@@ -4,7 +4,7 @@ from commands.commandmanager import CommandManager
 from core.console import showClientInfo, showBanner, pInfo
 from core.server_manager import ServerManager
 from api.apimanager import APIManager
-from core import host, port, auth_config_path, cert_file_path, key_file_path
+from core import host, port, auth_config_path, cert_file_path, key_file_path, auto_api
 
 """
 Achtung dies ist nur ein Grobes Konzept. Es ist Keine Funktion gewährleistet.
@@ -13,11 +13,11 @@ Achtung dies ist nur ein Grobes Konzept. Es ist Keine Funktion gewährleistet.
 def main():
     servermanager = ServerManager()
 
-    commandmanager = CommandManager(servermanager)
-
     apimanager = APIManager(server_manager=servermanager, host=host, port=port, auth_config_path=auth_config_path, cert_file_path=cert_file_path, key_file_path=key_file_path)
+    if auto_api: # API Webserver Automatisch starten
+        apimanager.start_in_thread()
 
-    apimanager.start_in_thread()
+    commandmanager = CommandManager(servermanager, apimanager)
 
     showBanner()
     showClientInfo("1.0.2", str(len(servermanager.servers)))
