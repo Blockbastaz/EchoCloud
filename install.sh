@@ -23,7 +23,8 @@ warn() {
 
 # System aktualisieren
 info "System wird aktualisiert..."
-sudo apt update && sudo apt upgrade -y
+# Für Entwicklungszwecke kurzzeitig deaktiviert
+# sudo apt update && sudo apt upgrade -y
 
 # Python3 & Pakete installieren
 info "Python3 und wichtige Pakete werden installiert..."

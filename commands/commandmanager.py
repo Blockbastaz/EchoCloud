@@ -25,6 +25,7 @@ class CommandManager:
         self.register_command("stop", self.cmd_stop)
         self.register_command("logs", self.cmd_logs)
         self.register_command("help", self.cmd_help)
+        self.register_command("autoscan", self.cmd_autoscan)
         self.register_command("debug", self.cmd_debug)
         self.register_command("reload", self.cmd_reload)
 
@@ -40,6 +41,7 @@ class CommandManager:
         self.add_help_message("reload", "Lädt einen Server neu")
         self.add_help_message("logs", "Zeigt Server-Logs")
         self.add_help_message("debug", "Debug Modus an/aus")
+        self.add_help_message("autoscan", "Scannt nach neuen Servern")
         self.add_help_message("help", "Diese Hilfe anzeigen")
 
     def add_help_message(self, command: str,  info: str):
@@ -76,7 +78,7 @@ class CommandManager:
         """Zeigt Status des ausgewählten Servers an"""
         if self.selected_server:
             status = self.selected_server.get_status()  # Beispielmethode
-            utils.pInfo(f"Status von [cyan]{self.selected_server.module_id}[/cyan]: \n{status}")
+            utils.pInfo(f"Status von [cyan]{self.selected_server.server_id}[/cyan]: \n{status}")
         else:
             utils.pWarning("Kein Server ausgewählt. Nutze 'servers' um Server anzuzeigen.")
 
@@ -128,11 +130,7 @@ class CommandManager:
             utils.pWarning("Server läuft bereits.")
             return
 
-        result = self.server_manager.start_server(self.selected_server.config_path)
-        if result:
-            self.selected_server.start()
-        else:
-            utils.pError("Start fehlgeschlagen.")
+        self.selected_server.start()
 
     # TEST
     def cmd_stop(self, args):
@@ -145,11 +143,8 @@ class CommandManager:
             utils.pWarning("Server ist bereits gestoppt.")
             return
 
-        result = self.server_manager.stop_server(self.selected_server.config_path)
-        if result:
-            self.selected_server.stop()
-        else:
-            utils.pError("Stop fehlgeschlagen.")
+        self.selected_server.stop()
+
 
     # TEST
     def cmd_logs(self, args):
@@ -172,6 +167,7 @@ class CommandManager:
         utils.pInfo(f"TODO!")
 
     def cmd_debug(self, args):
+        """Aktiviert/Deaktiviert Entwickler Modus"""
         tmp = not core.debug_mode
         core.debug_mode = not core.debug_mode
 
@@ -181,7 +177,13 @@ class CommandManager:
             utils.pInfo("Debug Mode deaktiviert")
 
     def cmd_help(self, args):
+        """Zeigt Hilfe"""
         utils.pInfo("Verfügbare Befehle:")
         for cmd, description in self.command_infos:
             utils.pInfo(f" - {cmd:<18} -> {description}")
+
+    def cmd_autoscan(self, args):
+        """Importiert automatisch neue Server"""
+        self.server_manager.scan_servers()
+        utils.pInfo(f"Server Erfolgreich gescannt.")
 

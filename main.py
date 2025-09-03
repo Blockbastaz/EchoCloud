@@ -26,7 +26,7 @@ def main():
     while True:
         try:
             if commandmanager.selected_server is None:
-                user_input = Prompt.ask("[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > ")
+                user_input = Prompt.ask(r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > ")
             else:
                 user_input = Prompt.ask(f"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] ([red]{commandmanager.selected_server.name}[/red]) > ")
 
