@@ -1,5 +1,3 @@
-Alles klar! Ich habe deine Anleitung in ein **moderneres, cleanes Format** für eine GitHub-README gebracht, das direkt kopierbar ist. Ich habe Markdown, Emojis und klare Schritte verwendet, sodass es professionell und ansprechend wirkt:
-
 ---
 
 <p align="center">
