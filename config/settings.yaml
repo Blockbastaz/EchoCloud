@@ -20,16 +20,11 @@ network:
   key_file_path: "./config/key.pem"                # Pfad zum Schlüssel des Zertifikats
 
 storage:
-  # Art der Speicherung:
-  # - "mysql"      (klassischer MySQL Server)
-  # - "mariadb"    (MySQL Fork, kompatibel)
-  # - "postgresql" (leistungsstark, für größere Projekte)
-  # - "h2"         (leichte Datei-Datenbank, kein Server nötig)
-  storage_type: "h2"
-  host: "localhost"          # Adresse deiner Datenbank (wird nur benötigt bei mysql, mariadb, postgresql)
-  port: 3306                 # Port Deiner Datenbank (MySQL/MariaDB: 3306, PostgreSQL: 5432)
-  username: "root"           # Benutzername für die Datenbank
-  password: "passwort"       # Passwort für die Datenbank
-  database: "EchoCloud"      # Datenbank Name
-  table_name: "json_storage" # Name des Tables wo EchoCloud Daten Speichert
-  h2_file_path: "../data/"   # Pfad zur H2 Jar
+  storage_type: "h2"         # Optionen: "mysql", "mariadb", "postgresql", "h2"
+  host: "localhost"          # Datenbankhost (nur bei MySQL/MariaDB/PostgreSQL)
+  port: 3306                 # Standardports: MySQL/MariaDB: 3306, PostgreSQL: 5432
+  username: "root"           # Datenbankbenutzer
+  password: "passwort"       # Datenbankpasswort
+  database: "EchoCloud"      # Datenbankname
+  table_name: "json_storage" # Tabelle für EchoCloud-Daten
+  h2_file_path: "data/"      # Pfad zur H2-Datei

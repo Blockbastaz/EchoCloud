@@ -9,9 +9,7 @@ from core import host, port, auth_config_path, cert_file_path, key_file_path, au
 
 from utils.storagemanager import StorageManager
 
-"""
-Achtung dies ist nur ein Grobes Konzept. Es ist Keine Funktion gewährleistet.
-"""
+# Pycharm importiert falsch fix -> psycopg2-binary~=2.9.10
 
 def main():
     servermanager = ServerManager()
@@ -20,16 +18,20 @@ def main():
     if auto_api: # API Webserver Automatisch starten
         apimanager.start_in_thread()
 
-    commandmanager = CommandManager(servermanager, apimanager)
 
     storagemanager = StorageManager(storage_type, storage_host, storage_port, storage_database, storage_username, storage_password,
                                     storage_table_name, storage_h2_file_path)
+    data = {"test":"test123"}
+    pInfo(f"Test daten Werden gesetzte: {data}")
+    storagemanager.store_data("test", data)
+    retrieved =  storagemanager.get_data("test")
+    pInfo(f"Test daten wurden abgerufen: {retrieved}")
 
-    storagemanager._connect()
-    storagemanager.store_data("test", {"test":"test123"})
+
+    commandmanager = CommandManager(servermanager, apimanager, storagemanager)
 
     showBanner()
-    showClientInfo("1.0.2", str(len(servermanager.servers)))
+    showClientInfo("1.0.3", str(len(servermanager.servers)))
 
 
     while True:

@@ -1,11 +1,12 @@
 import json
+import os
+
 import mysql.connector
 import psycopg2
 import jaydebeapi
 from typing import Dict, Any, Optional, List
 from enum import Enum
-from core.console import pInfo, pWarning, pError
-
+from core.console import pInfo, pWarning, pError, pDebug
 
 
 class DatabaseType(Enum):
@@ -25,7 +26,7 @@ class StorageManager:
             username: str = "root",
             password: str = "",
             table_name: str = "json_storage",
-            h2_file_path: str = "./data/"  # Für H2 Datei-basierte Datenbank
+            h2_file_path: str = "data/"  # Für H2 Datei-basierte Datenbank
     ):
 
         self.db_type: DatabaseType = DatabaseType(db_type.lower())
@@ -99,12 +100,12 @@ class StorageManager:
                 )
 
             elif self.db_type == DatabaseType.H2:
-                jdbc_url = f"jdbc:h2:{self.h2_file_path};AUTO_SERVER=FALSE;AUTO_CREATE_SCHEMA=TRUE"
+                jdbc_url = f"jdbc:h2:{os.path.abspath(self.h2_file_path)};AUTO_SERVER=FALSE;"
                 self.connection = jaydebeapi.connect(
                     "org.h2.Driver",
                     jdbc_url,
                     [self.username, self.password],
-                    "h2-2.3.232.jar"  # H2 JAR-Datei muss vorhanden sein
+                    jars="data/libs/h2-2.3.232.jar"
                 )
 
             pInfo(f"Verbindung zu {self.db_type.value} erfolgreich hergestellt ✓")
@@ -136,7 +137,7 @@ class StorageManager:
             query = f"""
             CREATE TABLE IF NOT EXISTS {self.table_name} (
                 id VARCHAR(255) PRIMARY KEY,
-                json_data CLOB NOT NULL,
+                json_data VARCHAR(1048576) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -189,7 +190,7 @@ class StorageManager:
             cursor = self.connection.cursor()
 
             if self.db_type == DatabaseType.H2:
-                query = f"SELECT json_data FROM {self.table_name} WHERE id = ?"
+                query = f"SELECT CAST(json_data AS VARCHAR) FROM {self.table_name} WHERE id = ?"
                 cursor.execute(query, (key,))
             else:
                 query = f"SELECT json_data FROM {self.table_name} WHERE id = %s"
@@ -199,9 +200,34 @@ class StorageManager:
             cursor.close()
 
             if result:
-                return json.loads(result[0])
+                data = result[0]
+
+                if self.db_type == DatabaseType.H2:
+                    if hasattr(data, 'getCharacterStream'):
+                        stream = data.getCharacterStream()
+                        data = stream.read()
+                        stream.close()
+                    elif hasattr(data, 'toString'):
+                        data = data.toString()
+                    elif hasattr(data, 'getValue'):
+                        data = str(data.getValue())
+                    else:
+                        data = str(data)
+
+                    pInfo(f"H2 Data Type: {type(data)}, Content: {data}")# Gleich Entfernen
+
+                if isinstance(data, str):
+                    return json.loads(data)
+                else:
+                    pError(f"❌ Unerwarteter Datentyp: {type(data)}")
+                    return None
+
             return None
 
+        except json.JSONDecodeError as e:
+            pError(f"❌ JSON-Parsing-Fehler: {e}")
+            pError(f"❌ Rohdaten: {data}")
+            return None
         except Exception as e:
             pError(f"❌ Fehler beim Laden: {e}")
             return None
@@ -247,7 +273,7 @@ class StorageManager:
     def close(self) -> None:
         if self.connection:
             self.connection.close()
-            pInfo("🔐 Datenbankverbindung geschlossen")
+            pInfo("Datenbankverbindung geschlossen")
 
 def beispiel_speichere_spieler(storage: StorageManager):
     player_data = {

@@ -24,6 +24,8 @@ class APIManager:
         self.port: int = port
         self.cert_duration_days = cert_duration_days
         self.clients: Dict[str, WebSocket] = {}  # server_id -> websocket
+        self.thread = None
+        self.server = None
 
         # Lade sichere Tokens
         self.auth_tokens: Dict[str, str] = self.load_auth_tokens(auth_config_path)
@@ -124,25 +126,27 @@ class APIManager:
             raise HTTPException(status_code=404, detail=f"Client '{server_id}' nicht verbunden.")
 
     def start_in_thread(self):
+        config = uvicorn.Config(
+            self.app,
+            host=self.host,
+            port=self.port,
+            log_level="info",
+            ssl_certfile=cert_file_path if use_https else None,
+            ssl_keyfile=key_file_path if use_https else None
+        )
+        self.server = uvicorn.Server(config)
+
         def run():
-            if use_https:
-                uvicorn.run(
-                    self.app,
-                    host=self.host,
-                    port=self.port,
-                    log_level="info",
-                    ssl_certfile=cert_file_path,
-                    ssl_keyfile=key_file_path
-                )
-            else:
-                uvicorn.run(
-                    self.app,
-                    host=self.host,
-                    port=self.port,
-                    log_level="info"
-                )
+            self.server.run()
 
-
-        thread = threading.Thread(target=run, daemon=True)
-        thread.start()
+        self.thread = threading.Thread(target=run, daemon=True)
+        self.thread.start()
         pInfo("Cloud Manager API [green]Online[/green] ✓")
+
+    def stop_thread(self):
+        pInfo("Cloud Manager API [red]Offline[/red] ✓")
+        if hasattr(self, "server") and self.server:
+            self.server.should_exit = True
+            if hasattr(self, "thread") and self.thread:
+                self.thread.join()
+

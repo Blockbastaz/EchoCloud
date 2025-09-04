@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import Dict, Callable, Optional, TYPE_CHECKING, List, Tuple
 
 from rich.prompt import Prompt
@@ -6,17 +8,19 @@ import core
 import core.console as utils
 from core.server_manager import ServerManager
 from api.apimanager import APIManager
+from utils.storagemanager import StorageManager
 
 if TYPE_CHECKING:
     from core.server_manager import Server
 
 class CommandManager:
-    def __init__(self, server_manager: 'ServerManager', api_manager: APIManager):
+    def __init__(self, server_manager: 'ServerManager', api_manager: APIManager, storage_manager: StorageManager):
         self.server_manager: ServerManager = server_manager
         self.api_manager = api_manager
         self.selected_server: Optional[Server] = None  # Module = Server Plugin
         self.commands: Dict[str, Callable[[str], None]] = {}
         self.command_infos: List[Tuple[str, str]] = []
+        self.storage_manager = storage_manager
 
         # Commands registrieren
         self.register_command("status", self.cmd_status)
@@ -31,6 +35,7 @@ class CommandManager:
         self.register_command("debug", self.cmd_debug)
         self.register_command("reload", self.cmd_reload)
         self.register_command("startapi", self.cmd_startapi)
+        self.register_command("exit", self.cmd_exit)
 
         self.add_default_commands()
 
@@ -47,6 +52,7 @@ class CommandManager:
         self.add_help_message("autoscan", "Scannt nach neuen Servern")
         self.add_help_message("help", "Diese Hilfe anzeigen")
         self.add_help_message("startapi", "Startet den API Webserver")
+        self.add_help_message("exit", "Stoppt EchoCloud")
 
     def add_help_message(self, command: str,  info: str):
         self.command_infos.append((command, info))
@@ -196,4 +202,13 @@ class CommandManager:
         """Importiert automatisch neue Server"""
         self.api_manager.start_in_thread()
         utils.pInfo(f"API Webserver gestartet.")
+
+
+    def cmd_exit(self, args):
+        """Importiert automatisch neue Server"""
+        self.api_manager.stop_thread()
+        self.storage_manager.close()
+        utils.pInfo(f"[red]Bye Bye...[/red]")
+        sys.exit(-1)
+
 

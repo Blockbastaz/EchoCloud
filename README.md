@@ -8,190 +8,311 @@
 <h1 align="center">EchoCloud</h1>
 
 <p align="center">
-  <strong>Das modulare Command-Line- & API-Tool für Minecraft-Server-Management</strong><br/>
+  <strong>Ein modernes, modulares Server-Management-System für Minecraft-Infrastrukturen mit integrierter API und persistenter Speicherung.</strong><br/>
   <em>Effizient. Sicher. Erweiterbar.</em>
 </p>
 
 ---
 
-## 🌐 Überblick
+## Übersicht
 
-**EchoCloud** ist ein modernes Python-CLI-System für die Verwaltung mehrerer Minecraft-Server, das **sowohl lokal als auch über HTTPS erreichbar** ist. Es kombiniert **flexibles Servermanagement**, **erweiterbare APIs** und **persistente Speicherung** in einer klar strukturierten Architektur.
-
-Die Software ist modular aufgebaut, sodass du nur die Komponenten nutzt, die du brauchst: **CLI, APIManager, ServerManager, CommandManager und Storage**.
+**EchoCloud** ist ein Python-basiertes CLI- und API-System zur Verwaltung mehrerer Minecraft-Serverinstanzen. Es bietet zentrale Kontrolle, Echtzeitüberwachung und sichere Kommunikation über REST-APIs und WebSockets.
 
 ---
 
-## ✨ Key Features
+## Hauptfunktionen
 
-| Feature                 | Beschreibung                                                                                                                                                      |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Modulares CLI**       | Rich-basierte, interaktive Kommandozeile mit Farbausgabe und strukturierter Übersicht für Server, Logs und Aktionen.                                              |
-| **APIManager**          | HTTPS-fähige API für externe Plugins oder Tools. Authentifizierung via Tokens pro Server. Vollständig WebSocket-kompatibel für **Server → Client Kommunikation**. |
-| **ServerManager**       | Verwaltung von beliebig vielen Serverinstanzen gleichzeitig. Start, Stop, Statusabfrage, Logs – alles aus einer Konsole.                                          |
-| **CommandManager**      | Erweiterbares Befehlsframework für server-spezifische Aktionen, das beliebig ergänzt werden kann.                                                                 |
-| **Storage**             | Persistente Speicherung von Konfigurationen, Logs und benutzerdefinierten Daten. Unterstützt **MySQL, MariaDB, PostgreSQL und H2**.                               |
-| **HTTPS & Zertifikate** | Automatische Zertifikatsgenerierung für sichere Kommunikation mit Plugins und WebClients.                                                                         |
-| **Autoregistration**    | Automatisches Registrieren neuer Server aus einem konfigurierten Standardpfad.                                                                                    |
-| **Debug Mode**          | Detaillierte Entwickler-Logs für schnelle Fehlerdiagnose und Monitoring.                                                                                          |
-| **Cross-Platform**      | Lauffähig auf Linux, Windows und Mac, kompatibel mit allen gängigen Minecraft-Versionen.                                                                          |
+* **Multi-Server-Verwaltung**: Zentrale Kontrolle über mehrere Minecraft-Serverinstanzen
+* **RESTful API**: Sicheres HTTPS-API mit Token-Authentifizierung
+* **WebSocket-Support**: Echtzeit-Kommunikation in beide Richtungen
+* **Persistente Speicherung**: MySQL, MariaDB, PostgreSQL oder H2
+* **Auto-Discovery**: Automatische Servererkennung und -registrierung
+* **Screen-Integration**: Nahtlose Verwaltung von Linux-Screen-Sessions
+* **Rich CLI**: Interaktive Kommandozeile mit Syntax-Highlighting
+* **SSL/TLS-Unterstützung**: Automatische Zertifikatserstellung für sichere Kommunikation
 
 ---
 
-## 💾 Storage & Persistenz
+## Architektur
 
-EchoCloud kann Daten auf unterschiedliche Arten speichern, je nach Projektgröße und Anforderungen:
-
-| Typ                 | Beschreibung                                                                           |
-| ------------------- | -------------------------------------------------------------------------------------- |
-| **MySQL / MariaDB** | Klassische relationale Datenbank, geeignet für mittelgroße bis große Projekte.         |
-| **PostgreSQL**      | Leistungsstark, ideal für umfangreiche Daten und komplexe Queries.                     |
-| **H2**              | Leichte, dateibasierte Java-Datenbank – perfekt für kleine Projekte oder lokale Tests. |
-
-**Konfiguration:**
-
-```yaml
-storage:
-  storage_type: "h2"           # h2, mysql, mariadb, postgresql
-  host: "localhost"
-  port: 3306
-  username: "root"
-  password: "passwort"
-  database: "EchoCloud"
-  table_name: "json_storage"
-  h2_file_path: "../data/"
+```
+EchoCloud/
+├── core/                   # Kernmodule
+│   ├── server_manager.py   # Server Lifecycle Management
+│   ├── console.py          # CLI Utilities & Formatierung
+│   └── certgen.py          # SSL-Zertifikatserstellung
+├── commands/               # Kommando-System
+│   └── commandmanager.py   # CLI-Dispatcher
+├── api/                    # API-Ebene
+│   └── apimanager.py       # FastAPI-Server & WebSocket-Handler
+├── utils/                  # Hilfsfunktionen
+│   └── storagemanager.py   # Datenbankabstraktion
+└── config/                 # Konfigurationsdateien
+    └── settings.yaml       # Hauptkonfiguration
 ```
 
 ---
 
-## 🔒 Sicherheit & Authentifizierung
+## Voraussetzungen
 
-* Jeder Server erhält einen **eigenen Auth-Token**, gespeichert in `auth_tokens.yaml`.
-* HTTPS wird standardmäßig unterstützt; Zertifikate können automatisch generiert werden (`cert.pem` & `key.pem`).
-* WebSocket-Kommunikation erlaubt bidirektionale Nachrichten: **Server → Client** oder **Client → Server**.
+* **Python 3.8+**
+* **Linux/Unix**
+* **Java** 
 
 ---
 
-## 🚀 Installation
+## Installation
 
-### 1️⃣ Vorbereitung
+1. Repository klonen:
 
 ```bash
-cd EchoCloud/EchoCloud
-sudo chmod +x install.sh
+git clone https://github.com/yourusername/EchoCloud.git
+cd EchoCloud
 ```
 
-> `sudo` stellt sicher, dass das Skript ausführbar ist.
+2. Installationsskript ausführbar machen:
 
----
+```bash
+chmod +x install.sh
+```
 
-### 2️⃣ Installation starten
+3. Installation starten:
 
 ```bash
 ./install.sh
 ```
 
-* Installiert Abhängigkeiten
-* Erstellt Standardkonfigurationen
-* Generiert initiale Serverliste
+4. Server Importieren:
 
----
-
-### 3️⃣ Bestehende Server importieren
-
-* Passe `default_path` in `settings.yaml` an:
-
-```yaml
-default_path: "../Cloud/running/static"
+```bash
+autoscan
 ```
 
-* EchoCloud scannt diesen Ordner automatisch und erstellt Konfigurationsdateien für alle vorhandenen Server.
+> Hinweis: Das Skript installiert notwendige Python-Abhängigkeiten und legt die Standardverzeichnisse für Server und Datenbanken an.
 
 ---
 
-### 4️⃣ Server auswählen & starten
+## Konfiguration
 
-```text
-select Proxy-1
-start
-```
-
-* Server läuft im Hintergrund via `screen`.
-* Logs können live über die CLI angezeigt werden.
-
----
-
-### 5️⃣ CLI & Commands
-
-| Befehl                    | Beschreibung                                                       |
-| ------------------------- | ------------------------------------------------------------------ |
-| `status`                  | Zeigt Status, CPU, RAM und Online-Status des ausgewählten Servers. |
-| `servers`                 | Listet alle bekannten Server auf.                                  |
-| `select <server>`         | Wählt einen Server für Befehle aus.                                |
-| `config [option] [value]` | Zeigt oder ändert Konfigurationen.                                 |
-| `start`                   | Startet den ausgewählten Server im Hintergrund.                    |
-| `stop`                    | Stoppt den Server sauber.                                          |
-| `logs`                    | Zeigt die aktuellen Logs in Echtzeit.                              |
-| `help`                    | Zeigt alle verfügbaren Befehle.                                    |
-| `autoscan`                | Scannt `default_path` nach neuen Servern.                          |
-| `debug`                   | Aktiviert Entwickler-Logs für detailliertes Monitoring.            |
-| `reload`                  | Lädt Serverkonfiguration neu, ohne den Server zu stoppen.          |
-
-💡 **Tipp:** Immer zuerst `select <server>` ausführen, bevor `start` oder `stop` verwendet wird.
-
----
-
-## 🌍 API & WebSocket
-
-* **POST Endpoint für Plugins:** `/api/plugin/{server_id}/{auth_token}`
-  JSON-Beispiel:
-
-  ```json
-  {
-    "playerName": "Steve",
-    "action": "jump"
-  }
-  ```
-* **WebSocket Endpoint:** `/ws/{server_id}/{auth_token}`
-
-  * Echtzeit-Kommunikation Server → Plugin
-  * Authentifizierung via Token
-  * Ideal für Events, Benachrichtigungen oder Remote-Control
-
----
-
-## ⚙️ Konfiguration (settings.yaml)
+Bearbeite die Datei `config/settings.yaml`:
 
 ```yaml
 server:
   default_path: "../Cloud/running/static"
   version: "paper-1.21.1-133.jar"
-  check_delay: 10
+  check_delay: 10            # Zeit (in Sekunden), um den Serverstatus nach Start zu prüfen
 
 cloud:
-  autoregister: true
-  debug_mode: false
-  host: "localhost"
-  port: 9989
+  autoregister: true         # Server aus Standardpfad automatisch registrieren
+  debug_mode: false          # Entwicklernachrichten aktivieren
+  host: "localhost"          # EchoCloud-Adresse
+  port: 9989                 # EchoCloud-Port
 
 network:
-  use_https: true
-  auto_cert: true
-  auto_api: false
-  cert_duration_days: 365
+  use_https: true            # HTTPS für Serverkommunikation aktivieren
+  auto_cert: true            # Zertifikat automatisch generieren
+  auto_api: false            # API automatisch beim Start aktivieren
+  cert_duration_days: 365    # Gültigkeitsdauer des Zertifikats
   auth_config_path: "./config/auth_tokens.yaml"
   cert_file_path: "./config/cert.pem"
   key_file_path: "./config/key.pem"
+
+storage:
+  storage_type: "h2"          # Optionen: "mysql", "mariadb", "postgresql", "h2"
+  host: "localhost"           # Datenbankhost (nur bei MySQL/MariaDB/PostgreSQL)
+  port: 3306                  # Standardports: MySQL/MariaDB: 3306, PostgreSQL: 5432
+  username: "root"            # Datenbankbenutzer
+  password: "passwort"        # Datenbankpasswort
+  database: "EchoCloud"       # Datenbankname
+  table_name: "json_storage"  # Tabelle für EchoCloud-Daten
+  h2_file_path: "data/"       # Pfad zur H2-Datei
 ```
 
 ---
 
-## 📝 Modernes, flexibles Design
+## Nutzung
 
-* **Modular**: CLI, API, Storage, Server- & CommandManager unabhängig.
-* **Sicher**: Auth, HTTPS, selbstsignierte Zertifikate oder CA.
-* **Erweiterbar**: Eigene Commands, neue Storage-Typen, Plugins.
-* **Cross-Platform**: Linux, Windows, MacOS.
+### CLI starten
+
+```bash
+python main.py
+```
+
+#### Kernkommandos
+
+| Befehl            | Beschreibung                      | Beispiel         |
+|-------------------|-----------------------------------| ---------------- |
+| `servers`         | Liste aller registrierten Server  | `servers`        |
+| `select <server>` | Server für Operationen auswählen  | `select Lobby-1` |
+| `status`          | Detaillierter Serverstatus        | `status`         |
+| `start`           | Ausgewählten Server starten       | `start`          |
+| `stop`            | Ausgewählten Server stoppen       | `stop`           |
+| `logs`            | Server-Logs anzeigen              | `logs`           |
+| `autoscan`        | Neue Server automatisch scannen   | `autoscan`       |
+| `startapi`        | API-Webserver starten             | `startapi`       |
+| `debug`           | Debug-Modus ein-/ausschalten      | `debug`          |
+| `help`            | Alle verfügbaren Befehle anzeigen | `help`           |
+| `exit`            | EchoCloud Stoppen                 | `help`           |
+
+---
+
+### API Nutzung
+
+#### Authentifizierung
+
+Jeder Server hat ein eigenes Token in `config/auth_tokens.yaml`. Tokens werden bei der Registrierung automatisch erstellt.
+
+#### REST API Beispiel
+
+```http
+POST /api/plugin/{server_id}/{auth_token}
+Content-Type: application/json
+
+{
+  "playerName": "Steve",
+  "action": "jump",
+  "data": {}
+}
+```
+
+#### WebSocket Beispiel
+
+```javascript
+const ws = new WebSocket('wss://localhost:9989/ws/server_id/auth_token');
+
+ws.send(JSON.stringify({
+  "type": "command",
+  "data": "say Hallo Welt"
+}));
+```
+
+#### Health Check
+
+```http
+GET /api/ping
+```
+
+---
+
+## Datenbankunterstützung
+
+### H2 (Standard)
+
+Leichtgewichtige, dateibasierte Datenbank – ideal für Entwicklung:
+
+```yaml
+storage:
+  storage_type: "h2"
+  h2_file_path: "data/"
+```
+
+### MySQL/MariaDB
+
+Produktionsreife relationale Datenbank:
+
+```yaml
+storage:
+  storage_type: "mysql"  # oder "mariadb"
+  host: "localhost"
+  port: 3306
+  username: "echocloud"
+  password: "secure_password"
+  database: "echocloud_db"
+```
+
+### PostgreSQL
+
+Leistungsstarke Datenbank für große Installationen:
+
+```yaml
+storage:
+  storage_type: "postgresql"
+  host: "localhost"
+  port: 5432
+  username: "echocloud"
+  password: "secure_password"
+  database: "echocloud_db"
+```
+
+---
+
+## Serverstruktur
+
+```
+servers/
+├── ServerType1/
+│   ├── Server-1/
+│   │   ├── run.sh
+│   │   ├── server.properties
+│   │   └── server.jar
+│   └── Server-2/
+└── ServerType2/
+    └── Server-3/
+```
+
+Jeder Serverordner muss enthalten:
+
+* `run.sh`: Startskript mit Screen-Konfiguration
+* `server.properties`: Minecraft-Server-Konfiguration
+* Server-JAR-Datei
+
+---
+
+## Sicherheitsfeatures
+
+* **Token-basierte Authentifizierung**: Jeder Server erhält eindeutige Zugangstokens
+* **HTTPS/WSS**: Alle Verbindungen verschlüsselt
+* **Automatisch generierte Zertifikate**: Für Entwicklungszwecke
+* **CORS-Schutz**: Konfigurierbar
+* **Eingabevalidierung**: Alle Anfragen werden geprüft
+
+---
+
+## Entwicklung
+
+### Eigene Befehle hinzufügen
+
+```python
+def cmd_custom(self, args):
+    """Implementierung eines eigenen Befehls"""
+    pass
+
+self.register_command("custom", self.cmd_custom)
+self.add_help_message("custom", "Beschreibung des Kommandos")
+```
+
+### Datenbankoperationen
+
+```python
+# Daten speichern
+storage_manager.store_data("key", {"data": "value"})
+
+# Daten abrufen
+data = storage_manager.get_data("key")
+
+# Daten löschen
+storage_manager.delete_data("key")
+```
+
+---
+
+## Mitwirken
+
+1. Fork des Repositories
+2. Feature-Branch erstellen (`git checkout -b feature/neues-feature`)
+3. Änderungen committen (`git commit -am 'Neues Feature'`)
+4. Branch pushen (`git push origin feature/neues-feature`)
+5. Pull Request erstellen
+
+---
+
+## Support
+
+Für Support bitte ein Issue auf GitHub öffnen oder das Entwicklerteam kontaktieren.
+
+---
+
+**EchoCloud** – Professionelles Minecraft-Servermanagement einfach gemacht.
 
 ---
 

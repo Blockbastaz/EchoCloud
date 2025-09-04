@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -12,6 +13,12 @@ from rich.prompt import Prompt
 from core import settings, get_section
 from core.console import pError, pWarning, pInfo
 
+
+class ServerState(Enum):
+    OFFLINE = "Offline"
+    STARTING = "Startet"
+    ONLINE = "Online"
+    STOPPING = "Stoppt"
 
 class ServerManager:
     def __init__(self, server_config_dir="./data/server_configs", ):
@@ -51,7 +58,8 @@ class ServerManager:
                 port=int(cfg.get("port", 25565)),
                 server_type=cfg.get("server_type", "Unknown"),
                 config_path=str(cfg_path),
-                java_memory=cfg.get("java_memory", {"Xmx": "1024M", "Xms": "1024M"})
+                java_memory=cfg.get("java_memory", {"Xmx": "1024M", "Xms": "1024M"}),
+                server_state=ServerState.OFFLINE
             )
             self.servers.append(server)
             pInfo(f"Server '{server.name}' registriert.")
@@ -128,7 +136,8 @@ class ServerManager:
                         port=port,
                         server_type=server_type,
                         config_path="__AUTO__",
-                        java_memory=java_memory
+                        java_memory=java_memory,
+                        server_state= ServerState.OFFLINE
                     )
                     server.run_sh_path = str(run_sh.resolve())
 
@@ -185,7 +194,9 @@ class Server:
         server_type: str,
         config_path: str,
         java_memory: Optional[Dict[str, str]] = None,
+        server_state: ServerState = ServerState.OFFLINE
     ):
+        self.server_state = server_state
         self.server_id: str = server_id
         self.name: str = name
         self.ip: str = ip
@@ -193,7 +204,6 @@ class Server:
         self.server_type: str = server_type
         self.config_path: str = config_path
         self.run_sh_path: str = "Unknown"
-        self.state: str = "OFFLINE" # OFFLINE / ONLINE / STARTING / STOPPING
 
         # Java Memory Optionen aus YAML
         self.java_memory: Dict[str, str] = java_memory or {
@@ -244,7 +254,7 @@ class Server:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
-            self.state = "STARTING" # Auf Antwort von API warten bis server -> ONLINE
+            self.server_state = ServerState.STARTING
 
             self.is_running = True
             self.start_time = datetime.now()
@@ -269,7 +279,7 @@ class Server:
                 ["screen", "-S", self.screen_name, "-p", "0", "-X", "stuff", "stop\n"],
                 check=True
             )
-            self.state = "STOPPING" # Auf antwort per API warten bis server -> OFFLINE
+            self.server_state = ServerState.STOPPING # Auf antwort per API warten bis server -> OFFLINE
             self.is_running = False
             self.start_time = None
             pInfo(f"[INFO] Stop-Befehl an Server '{self.name}' (Screen: {self.screen_name}) gesendet.")
