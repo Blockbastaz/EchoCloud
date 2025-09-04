@@ -13,6 +13,7 @@ from core.console import pInfo, pWarning, pDebug
 from core.server_manager import ServerManager
 from core import autocert, use_https, cert_file_path, key_file_path
 from utils.certgen import generate_self_signed_cert
+from fastapi import Request
 
 
 class APIManager:
@@ -98,6 +99,23 @@ class APIManager:
         async def ping():
             return JSONResponse({"status": "ok"})
 
+        @self.app.post("/api/plugin/{server_id}/{auth_token}")
+        async def plugin_endpoint(server_id: str, auth_token: str, request: Request):
+            expected_token = self.auth_tokens.get(server_id)
+            if not expected_token or not secrets.compare_digest(expected_token, auth_token):
+                raise HTTPException(status_code=401, detail="Auth fehlgeschlagen")
+
+            data = await request.json()  # JSON-Daten vom Plugin
+            player_name = data.get("playerName")
+            action = data.get("action")
+
+            pInfo(f"Plugin Daten von {server_id} - Spieler: {player_name}, Aktion: {action}")
+
+            if server_id in self.clients:
+                await self.send_message(server_id, f"Aktion empfangen: {action} von {player_name}")
+
+            return JSONResponse({"status": "success", "received": data})
+
     async def send_message(self, server_id: str, message: str):
         websocket = self.clients.get(server_id)
         if websocket:
@@ -124,7 +142,6 @@ class APIManager:
                     log_level="info"
                 )
 
-                # Debug Nachrichten von Server Kommen Noch!
 
         thread = threading.Thread(target=run, daemon=True)
         thread.start()

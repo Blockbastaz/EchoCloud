@@ -4,7 +4,10 @@ from commands.commandmanager import CommandManager
 from core.console import showClientInfo, showBanner, pInfo
 from core.server_manager import ServerManager
 from api.apimanager import APIManager
-from core import host, port, auth_config_path, cert_file_path, key_file_path, auto_api
+from core import host, port, auth_config_path, cert_file_path, key_file_path, auto_api, storage_type, storage_host, \
+    storage_port, storage_username, storage_password, storage_database, storage_table_name, storage_h2_file_path
+
+from utils.storagemanager import StorageManager
 
 """
 Achtung dies ist nur ein Grobes Konzept. Es ist Keine Funktion gewährleistet.
@@ -18,6 +21,12 @@ def main():
         apimanager.start_in_thread()
 
     commandmanager = CommandManager(servermanager, apimanager)
+
+    storagemanager = StorageManager(storage_type, storage_host, storage_port, storage_database, storage_username, storage_password,
+                                    storage_table_name, storage_h2_file_path)
+
+    storagemanager._connect()
+    storagemanager.store_data("test", {"test":"test123"})
 
     showBanner()
     showClientInfo("1.0.2", str(len(servermanager.servers)))

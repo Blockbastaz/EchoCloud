@@ -19,6 +19,17 @@ cert_file_path: Path = Path(settings.get("network", {}).get("cert_file_path", ".
 key_file_path: Path = Path(settings.get("network", {}).get("key_file_path", "./config/key.pem"))
 auto_api: bool = settings.get("network", {}).get("auto_api", False)
 
+storage_type: str = settings.get("storage", {}).get("storage_type", "h2")
+storage_host: str = settings.get("storage", {}).get("host", "localhost")
+storage_port: int = settings.get("storage", {}).get("port", 3306)
+storage_username: str = settings.get("storage", {}).get("username", "username")
+storage_password: str = settings.get("storage", {}).get("password", "password")
+storage_database: str = settings.get("storage", {}).get("database", "EchoCloud")
+storage_table_name: str = settings.get("storage", {}).get("table_name", "json_storage")
+storage_h2_file_path: str = settings.get("storage", {}).get("h2_file_path", "../data/")
+
+
+
 def get_section(section: str, key: str, default=None):
     return settings.get(section, {}).get(key, default)
 

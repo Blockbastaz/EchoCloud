@@ -70,7 +70,7 @@ Falls du bereits Minecraft-Server hast, passe den `default_path` in `settings.ya
 default_path: "../Cloud/running/static"
 ```
 
-> 🔹 Hier liegt der Basisordner deiner Server (`Proxy-1`, `Lobby-1` etc.).
+> 🔹 Hier liegt der Basisordner deiner Server (`Proxy`, `Lobby` etc.).
 
 ---
 
@@ -88,7 +88,11 @@ Nach dem Setzen des Pfads wirst du gefragt, ob EchoCloud die Serverkonfiguration
 1. Wähle einen Server aus der Liste, z. B.:
 
 ```text
-Select server: Proxy-1
+select Proxy-1
+```
+
+```text
+start
 ```
 
 2. Der Server startet **im Hintergrund** über `screen`.
