@@ -1,3 +1,4 @@
+
 ---
 
 <p align="center">
@@ -7,48 +8,80 @@
 <h1 align="center">EchoCloud</h1>
 
 <p align="center">
-  <strong>Ein modulares Command-Line-Tool zur Verwaltung von Minecraft-Servern.</strong><br/>
-  <em>⚠️ Frühphase – noch nicht einsatzbereit!</em>
+  <strong>Das modulare Command-Line- & API-Tool für Minecraft-Server-Management</strong><br/>
+  <em>Effizient. Sicher. Erweiterbar.</em>
 </p>
 
 ---
 
-## 🧠 Überblick
+## 🌐 Überblick
 
-**EchoCloud** ist ein flexibles Python-basiertes CLI-System mit optionaler API-Schnittstelle, um Minecraft-Server effizient zu verwalten.
+**EchoCloud** ist ein modernes Python-CLI-System für die Verwaltung mehrerer Minecraft-Server, das **sowohl lokal als auch über HTTPS erreichbar** ist. Es kombiniert **flexibles Servermanagement**, **erweiterbare APIs** und **persistente Speicherung** in einer klar strukturierten Architektur.
 
-Features:
-
-* Interaktive Rich-Konsole
-* API-Schnittstelle über HTTPS
-* Dynamisches Server-Management
-* Erweiterbares Befehls-Framework
+Die Software ist modular aufgebaut, sodass du nur die Komponenten nutzt, die du brauchst: **CLI, APIManager, ServerManager, CommandManager und Storage**.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-* ✅ Kommandozeileninterface (CLI) mit farbiger Rich-Ausgabe
-* ✅ APIManager-Modul läuft parallel im Hintergrund
-* ✅ ServerManager für mehrere Serverinstanzen
-* ✅ CommandManager für server-spezifische Befehle
-* ✅ Modularer Aufbau: klare Trennung zwischen Logik und Interface
-* 🚧 Frühphase: Viele Funktionen sind noch Platzhalter
+| Feature                 | Beschreibung                                                                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Modulares CLI**       | Rich-basierte, interaktive Kommandozeile mit Farbausgabe und strukturierter Übersicht für Server, Logs und Aktionen.                                              |
+| **APIManager**          | HTTPS-fähige API für externe Plugins oder Tools. Authentifizierung via Tokens pro Server. Vollständig WebSocket-kompatibel für **Server → Client Kommunikation**. |
+| **ServerManager**       | Verwaltung von beliebig vielen Serverinstanzen gleichzeitig. Start, Stop, Statusabfrage, Logs – alles aus einer Konsole.                                          |
+| **CommandManager**      | Erweiterbares Befehlsframework für server-spezifische Aktionen, das beliebig ergänzt werden kann.                                                                 |
+| **Storage**             | Persistente Speicherung von Konfigurationen, Logs und benutzerdefinierten Daten. Unterstützt **MySQL, MariaDB, PostgreSQL und H2**.                               |
+| **HTTPS & Zertifikate** | Automatische Zertifikatsgenerierung für sichere Kommunikation mit Plugins und WebClients.                                                                         |
+| **Autoregistration**    | Automatisches Registrieren neuer Server aus einem konfigurierten Standardpfad.                                                                                    |
+| **Debug Mode**          | Detaillierte Entwickler-Logs für schnelle Fehlerdiagnose und Monitoring.                                                                                          |
+| **Cross-Platform**      | Lauffähig auf Linux, Windows und Mac, kompatibel mit allen gängigen Minecraft-Versionen.                                                                          |
 
 ---
 
-## 🛠️ Installation
+## 💾 Storage & Persistenz
+
+EchoCloud kann Daten auf unterschiedliche Arten speichern, je nach Projektgröße und Anforderungen:
+
+| Typ                 | Beschreibung                                                                           |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| **MySQL / MariaDB** | Klassische relationale Datenbank, geeignet für mittelgroße bis große Projekte.         |
+| **PostgreSQL**      | Leistungsstark, ideal für umfangreiche Daten und komplexe Queries.                     |
+| **H2**              | Leichte, dateibasierte Java-Datenbank – perfekt für kleine Projekte oder lokale Tests. |
+
+**Konfiguration:**
+
+```yaml
+storage:
+  storage_type: "h2"           # h2, mysql, mariadb, postgresql
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: "passwort"
+  database: "EchoCloud"
+  table_name: "json_storage"
+  h2_file_path: "../data/"
+```
+
+---
+
+## 🔒 Sicherheit & Authentifizierung
+
+* Jeder Server erhält einen **eigenen Auth-Token**, gespeichert in `auth_tokens.yaml`.
+* HTTPS wird standardmäßig unterstützt; Zertifikate können automatisch generiert werden (`cert.pem` & `key.pem`).
+* WebSocket-Kommunikation erlaubt bidirektionale Nachrichten: **Server → Client** oder **Client → Server**.
+
+---
+
+## 🚀 Installation
 
 ### 1️⃣ Vorbereitung
-
-Setze die Berechtigungen für das Installationsskript:
 
 ```bash
 cd EchoCloud/EchoCloud
 sudo chmod +x install.sh
 ```
 
-> 🔹 `sudo` wird benötigt, damit das Skript ausführbar ist.
+> `sudo` stellt sicher, dass das Skript ausführbar ist.
 
 ---
 
@@ -58,90 +91,107 @@ sudo chmod +x install.sh
 ./install.sh
 ```
 
-Das Skript richtet die Abhängigkeiten ein und erstellt die Standardkonfigurationen.
+* Installiert Abhängigkeiten
+* Erstellt Standardkonfigurationen
+* Generiert initiale Serverliste
 
 ---
 
 ### 3️⃣ Bestehende Server importieren
 
-Falls du bereits Minecraft-Server hast, passe den `default_path` in `settings.yaml` an:
+* Passe `default_path` in `settings.yaml` an:
 
 ```yaml
 default_path: "../Cloud/running/static"
 ```
 
-> 🔹 Hier liegt der Basisordner deiner Server (`Proxy`, `Lobby` etc.).
+* EchoCloud scannt diesen Ordner automatisch und erstellt Konfigurationsdateien für alle vorhandenen Server.
 
 ---
 
-### 4️⃣ Server-Konfiguration erstellen
-
-Nach dem Setzen des Pfads wirst du gefragt, ob EchoCloud die Serverkonfigurationen generieren soll.
-
-* Bestätige mit **ja**
-* EchoCloud scannt den `default_path` und erstellt Konfigurationsdateien für alle vorhandenen Server.
-
----
-
-### 5️⃣ Server auswählen & starten
-
-1. Wähle einen Server aus der Liste, z. B.:
+### 4️⃣ Server auswählen & starten
 
 ```text
 select Proxy-1
-```
-
-```text
 start
 ```
 
-2. Der Server startet **im Hintergrund** über `screen`.
-
-   * Du kannst weiterhin die Konsole nutzen, während der Server läuft.
-   * `run.sh` wird automatisch ausführbar gemacht, falls nötig.
+* Server läuft im Hintergrund via `screen`.
+* Logs können live über die CLI angezeigt werden.
 
 ---
 
-### 6️⃣ Serververwaltung
+### 5️⃣ CLI & Commands
 
-Mit EchoCloud kannst du jetzt:
+| Befehl                    | Beschreibung                                                       |
+| ------------------------- | ------------------------------------------------------------------ |
+| `status`                  | Zeigt Status, CPU, RAM und Online-Status des ausgewählten Servers. |
+| `servers`                 | Listet alle bekannten Server auf.                                  |
+| `select <server>`         | Wählt einen Server für Befehle aus.                                |
+| `config [option] [value]` | Zeigt oder ändert Konfigurationen.                                 |
+| `start`                   | Startet den ausgewählten Server im Hintergrund.                    |
+| `stop`                    | Stoppt den Server sauber.                                          |
+| `logs`                    | Zeigt die aktuellen Logs in Echtzeit.                              |
+| `help`                    | Zeigt alle verfügbaren Befehle.                                    |
+| `autoscan`                | Scannt `default_path` nach neuen Servern.                          |
+| `debug`                   | Aktiviert Entwickler-Logs für detailliertes Monitoring.            |
+| `reload`                  | Lädt Serverkonfiguration neu, ohne den Server zu stoppen.          |
 
-* Server starten oder stoppen
-* Logs direkt in der Rich-Konsole einsehen
-* Neue Server hinzufügen, indem du deren Ordner in `default_path` legst und die Konfiguration neu generierst
-
----
-
-💡 **Tipp:** Für den produktiven Einsatz achte darauf, dass alle `run.sh`-Skripte Linux-kompatible Zeilenenden (`LF`) haben, sonst kann es zu Fehlern wie `Exec format error` kommen.
-
----
-Hier ist eine **übersichtliche Erklärung aller Befehle**, die in deinem `CommandManager` registriert sind. Ich habe sie so formuliert, dass sie direkt in die README passen:
-
----
-
-## 📝 Verfügbare Befehle in EchoCloud
-
-| Befehl                    | Beschreibung                                                                                                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `status`                  | Zeigt den aktuellen Status des ausgewählten Servers an (läuft er, gestoppt, CPU/Memory, etc.).                                                                                                |
-| `servers`                 | Listet alle bekannten Server auf, die EchoCloud verwaltet.                                                                                                                                    |
-| `select <server>`         | Wählt einen Server aus der Liste aus, um Befehle auf ihm auszuführen. Beispiel: `select Proxy-1`.                                                                                             |
-| `config [option] [value]` | Zeigt oder ändert die Konfiguration des ausgewählten Servers. Ohne Parameter: aktuelle Konfiguration anzeigen. Mit Parametern: Einstellungen ändern. Beispiel: `config java_memory Xmx2048M`. |
-| `start`                   | Startet den ausgewählten Server im Hintergrund (über `screen`).                                                                                                                               |
-| `stop`                    | Stoppt den ausgewählten Server, indem ein Stop-Befehl an dessen Screen gesendet wird.                                                                                                         |
-| `logs`                    | Zeigt die aktuellen Logs des ausgewählten Servers direkt in der CLI an.                                                                                                                       |
-| `help`                    | Zeigt die Hilfe für alle verfügbaren Befehle an.                                                                                                                                              |
-| `autoscan`                | Scannt den `default_path` nach neuen Servern und erstellt ggf. Konfigurationen.                                                                                                               |
-| `debug`                   | Schaltet den Debug-Modus an oder aus, um detaillierte Informationen in der CLI zu erhalten.                                                                                                   |
-| `reload`                  | Lädt die Konfiguration eines Servers neu, ohne den Server komplett neu zu starten.                                                                                                            |
+💡 **Tipp:** Immer zuerst `select <server>` ausführen, bevor `start` oder `stop` verwendet wird.
 
 ---
 
-💡 **Tipp:**
+## 🌍 API & WebSocket
 
-* Nutze `select <server>` immer zuerst, um den Server auszuwählen, bevor du `start`, `stop` oder `logs` ausführst.
-* `autoscan` ist praktisch, wenn du neue Server hinzufügst oder bestehende Serverordner verschoben hast.
-* `debug` kann helfen, Probleme bei Start oder Konfiguration schneller zu identifizieren.
+* **POST Endpoint für Plugins:** `/api/plugin/{server_id}/{auth_token}`
+  JSON-Beispiel:
+
+  ```json
+  {
+    "playerName": "Steve",
+    "action": "jump"
+  }
+  ```
+* **WebSocket Endpoint:** `/ws/{server_id}/{auth_token}`
+
+  * Echtzeit-Kommunikation Server → Plugin
+  * Authentifizierung via Token
+  * Ideal für Events, Benachrichtigungen oder Remote-Control
+
+---
+
+## ⚙️ Konfiguration (settings.yaml)
+
+```yaml
+server:
+  default_path: "../Cloud/running/static"
+  version: "paper-1.21.1-133.jar"
+  check_delay: 10
+
+cloud:
+  autoregister: true
+  debug_mode: false
+  host: "localhost"
+  port: 9989
+
+network:
+  use_https: true
+  auto_cert: true
+  auto_api: false
+  cert_duration_days: 365
+  auth_config_path: "./config/auth_tokens.yaml"
+  cert_file_path: "./config/cert.pem"
+  key_file_path: "./config/key.pem"
+```
+
+---
+
+## 📝 Modernes, flexibles Design
+
+* **Modular**: CLI, API, Storage, Server- & CommandManager unabhängig.
+* **Sicher**: Auth, HTTPS, selbstsignierte Zertifikate oder CA.
+* **Erweiterbar**: Eigene Commands, neue Storage-Typen, Plugins.
+* **Cross-Platform**: Linux, Windows, MacOS.
 
 ---
 
