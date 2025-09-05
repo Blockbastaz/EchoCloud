@@ -100,7 +100,7 @@ Bearbeite die Datei `config/settings.yaml`:
 server:
   default_path: "../Cloud/running/static"
   version: "paper-1.21.1-133.jar"
-  check_delay: 10            # Zeit (in Sekunden), um den Serverstatus nach Start zu prüfen
+  check_delay: 10            # Intervall des Heartbeats von jedem Server. Dies updatet alle LaufzeitInfos von jedem Server.
 
 cloud:
   autoregister: true         # Server aus Standardpfad automatisch registrieren
@@ -198,7 +198,7 @@ GET /api/ping
 
 ### H2 (Standard)
 
-Leichtgewichtige, dateibasierte Datenbank – ideal für Entwicklung:
+Lightweight, dateibasierte Datenbank – ideal für Entwicklung:
 
 ```yaml
 storage:

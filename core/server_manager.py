@@ -19,6 +19,17 @@ class ServerState(Enum):
     STARTING = "Startet"
     ONLINE = "Online"
     STOPPING = "Stoppt"
+    CRASHED = "Crash"
+class Software(Enum):
+    VELOCITY = "Velocity"
+    BUNGEECORD = "Bungeecord"
+    PAPER = "Paper"
+    BUKKIT = "Bukkit"
+    SPIGOT = "Spigot"
+    FORGE = "Forge"
+    VANILLA = "Vanilla"
+    UNKNOWN = "Unknown"
+
 
 class ServerManager:
     def __init__(self, server_config_dir="./data/server_configs", ):
@@ -51,6 +62,15 @@ class ServerManager:
             cfg = self.load_server_config(cfg_path)
             server_id = cfg_path.stem
 
+            # Software und Version aus Config laden oder erkennen
+            software_str = cfg.get("software", "Unknown")
+            try:
+                software = Software(software_str)
+            except ValueError:
+                software = Software.UNKNOWN
+
+            software_version = cfg.get("software_version", None)
+
             server = Server(
                 server_id=server_id,
                 name=cfg.get("server_name", server_id),
@@ -59,10 +79,13 @@ class ServerManager:
                 server_type=cfg.get("server_type", "Unknown"),
                 config_path=str(cfg_path),
                 java_memory=cfg.get("java_memory", {"Xmx": "1024M", "Xms": "1024M"}),
-                server_state=ServerState.OFFLINE
+                server_state=ServerState.OFFLINE,
+                software=software,
+                software_version=software_version
             )
             self.servers.append(server)
-            pInfo(f"Server '{server.name}' registriert.")
+            version_info = f" v{software_version}" if software_version else ""
+            pInfo(f"Server '{server.name}' registriert ({software.value}{version_info}).")
 
     def get_server_by_id(self, server_id: str) -> Optional['Server']:
         return next((s for s in self.servers if s.server_id == server_id), None)
@@ -70,6 +93,90 @@ class ServerManager:
     def list_servers(self) -> List[str]:
         return [s.name for s in self.servers]
 
+    def detect_server_software(self, server_dir: Path) -> tuple[Software, Optional[str]]:
+        jar_files = list(server_dir.glob("*.jar"))
+
+        software = Software.UNKNOWN
+        version = "Unbekannt"
+
+        for jar_file in jar_files:
+            jar_name = jar_file.name.lower()
+
+            if "paper" in jar_name:
+                software = Software.PAPER
+                version_match = re.search(r"paper[.-]?(?:api)?[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif "spigot" in jar_name:
+                software = Software.SPIGOT
+                version_match = re.search(r"spigot[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif "bukkit" in jar_name or "craftbukkit" in jar_name:
+                software = Software.BUKKIT
+                version_match = re.search(r"(?:craft)?bukkit[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif "forge" in jar_name:
+                software = Software.FORGE
+                version_match = re.search(r"forge[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif "velocity" in jar_name:
+                software = Software.VELOCITY
+                version_match = re.search(r"velocity[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif "bungeecord" in jar_name or "bungee" in jar_name:
+                software = Software.BUNGEECORD
+                version_match = re.search(r"(?:bungee)?(?:cord)?[.-]?(\d+(?:\.\d+)*(?:[.-]\d+)?)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+            elif jar_name in ["server.jar", "minecraft_server.jar"] or "minecraft_server" in jar_name:
+                software = Software.VANILLA
+                version_match = re.search(r"minecraft_server\.(\d+(?:\.\d+)*)", jar_name)
+                if version_match:
+                    version = version_match.group(1)
+                break
+
+        if software == Software.UNKNOWN:
+            if (server_dir / "spigot.yml").exists():
+                software = Software.SPIGOT
+
+            elif (server_dir / "bukkit.yml").exists():
+                software = Software.BUKKIT
+
+            elif (server_dir / "mods").exists() and (server_dir / "config").exists():
+                software = Software.FORGE
+
+            elif (server_dir / "velocity.toml").exists():
+                software = Software.VELOCITY
+
+            elif (server_dir / "paper.yml").exists() or (server_dir / "config" / "paper-global.yml").exists():
+                software = Software.PAPER
+
+            elif (server_dir / "config.yml").exists():
+                try:
+                    with open(server_dir / "config.yml", "r", encoding="utf-8") as f:
+                        content = f.read()
+                        if "bungeecord" in content.lower() or "proxy" in content.lower():
+                            software = Software.BUNGEECORD
+                except:
+                    pass
+
+        return software, version
 
     #TODO Funktioniert Aktuell nur für Linux
     def scan_servers(self):
@@ -100,6 +207,9 @@ class ServerManager:
                     ip = "127.0.0.1"
                     port = 25565
                     java_memory = {"Xmx": "1024M", "Xms": "1024M"}
+
+                    # Software und Version erkennen
+                    software, software_version = self.detect_server_software(server_dir)
 
                     try:
                         with open(server_properties, "r", encoding="utf-8") as f:
@@ -137,20 +247,26 @@ class ServerManager:
                         server_type=server_type,
                         config_path="__AUTO__",
                         java_memory=java_memory,
-                        server_state= ServerState.OFFLINE
+                        server_state=ServerState.OFFLINE,
+                        software=software,
+                        software_version=software_version
                     )
                     server.run_sh_path = str(run_sh.resolve())
 
                     self.servers.append(server)
                     found_servers.append(server)
+
+                    version_info = f" v{software_version}" if software_version else ""
                     pInfo(
                         f"Gefunden: {server_type}/{server_id} "
-                        f"(IP: {ip}, Port: {port}, RAM: Xmx={java_memory['Xmx']} Xms={java_memory['Xms']})"
+                        f"(IP: {ip}, Port: {port}, RAM: Xmx={java_memory['Xmx']} Xms={java_memory['Xms']}, "
+                        f"Software: {software.value}{version_info})"
                     )
 
         if found_servers:
             pInfo(f"[+] Insgesamt {len(found_servers)} Server gefunden.")
-            choice = Prompt.ask(r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du für alle diese Server automatisch eine Config generieren? (y/n): ").strip().lower()
+            choice = Prompt.ask(
+                r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du für alle diese Server automatisch eine Config generieren? (y/n): ").strip().lower()
             if choice == "y":
                 for server in found_servers:
                     self.generate_config_for_server(server)
@@ -158,7 +274,8 @@ class ServerManager:
             else:
                 pInfo("OK, keine Configs erstellt.")
 
-            choice = Prompt.ask(r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du EchoCloud Jetzt Neustarten um alle AuthTokens Automatisch zu generieren?: ").strip().lower()
+            choice = Prompt.ask(
+                r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du EchoCloud Jetzt Neustarten um alle AuthTokens Automatisch zu generieren?: ").strip().lower()
             if choice == "y":
                 os.system("clear")
                 os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -174,6 +291,8 @@ class ServerManager:
             "ip": server.ip,
             "port": server.port,
             "server_type": server.server_type,
+            "software": server.software.value,
+            "software_version": server.software_version,
             "java_memory": server.java_memory,
             "run_sh_path": getattr(server, "run_sh_path", None)
         }
@@ -194,7 +313,9 @@ class Server:
         server_type: str,
         config_path: str,
         java_memory: Optional[Dict[str, str]] = None,
-        server_state: ServerState = ServerState.OFFLINE
+        server_state: ServerState = ServerState.OFFLINE,
+        software: Software = Software.UNKNOWN,
+        software_version: Optional[str] = "Unknown"
     ):
         self.server_state = server_state
         self.server_id: str = server_id
@@ -204,6 +325,8 @@ class Server:
         self.server_type: str = server_type
         self.config_path: str = config_path
         self.run_sh_path: str = "Unknown"
+        self.software: Software = software
+        self.software_version: Optional[str] = software_version
 
         # Java Memory Optionen aus YAML
         self.java_memory: Dict[str, str] = java_memory or {
@@ -217,10 +340,10 @@ class Server:
         self.tps: Optional[float] = None
         self.cpu_usage: Optional[float] = None
         self.ram_usage_mb: Optional[float] = None
-
-        # Spieler & Plugins
         self.players_online: List[str] = []
         self.max_players: int = 0
+
+        #  Plugins
         self.plugins: List[str] = []
         self.server_properties: Dict[str, str] = {}
 
@@ -307,10 +430,17 @@ class Server:
             return str(delta).split(".")[0]
         return None
 
+    def get_software_info(self) -> str:
+        """Gibt die Software-Information als formatierte Zeichenkette zurück"""
+        if self.software_version:
+            return f"{self.software.value} v{self.software_version}"
+        return self.software.value
+
     def summary(self) -> Dict[str, any]:
         return {
             "Name": self.name,
             "Typ": self.server_type,
+            "Software": self.get_software_info(),
             "IP": f"{self.ip}:{self.port}",
             "Status": "Online" if self.is_running else "Offline",
             "TPS": self.tps,
@@ -333,6 +463,7 @@ class Server:
         players = f"{len(self.players_online)}/{self.max_players}"
         plugins = ', '.join(self.plugins) if self.plugins else "Keine"
         uptime = self.get_uptime() or "–"
+        software_info = self.get_software_info()
 
         java_ram = f"Xmx: {self.java_memory.get('Xmx')} | Xms: {self.java_memory.get('Xms')}"
 
@@ -340,6 +471,7 @@ class Server:
             "[cyan bold]╭────────────────  Server Status ─────────────────╮[/cyan bold]",
             f"[cyan]│[/cyan] [bold white]Name:[/bold white]      {self.name}",
             f"[cyan]│[/cyan] [bold white]Typ:[/bold white]       {self.server_type}",
+            f"[cyan]│[/cyan] [bold white]Software:[/bold white]  {software_info}",
             f"[cyan]│[/cyan] [bold white]IP:[/bold white]        {self.ip}:{self.port}",
             f"[cyan]│[/cyan] [bold white]Status:[/bold white]    [{status_color}]{status_symbol} {status}[/{status_color}]",
             f"[cyan]│[/cyan] [bold white]TPS:[/bold white]       {tps}",

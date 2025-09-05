@@ -2,7 +2,10 @@ from typing import AnyStr
 
 from rich.console import Console
 from rich.prompt import Prompt
+import asyncio
 from core import debug_mode
+
+_console_lock = asyncio.Lock()
 
 console = Console()
 
@@ -30,12 +33,27 @@ def pWarning(text: str):
 def pError(text: str):
     console.print("[deep_sky_blue2][[/deep_sky_blue2][red]*[/red][deep_sky_blue2]][/deep_sky_blue2] [red]" + text + "[/red]")
 
-
 def pDebug(text: str):
     if debug_mode:
-        console.print(
-            "[deep_sky_blue2][[/deep_sky_blue2][purple4]*[/purple4][deep_sky_blue2]][/deep_sky_blue2] [purple4]" + text + "[/purple4]")
+        console.print("[deep_sky_blue2][[/deep_sky_blue2][purple4]*[/purple4][deep_sky_blue2]][/deep_sky_blue2] [purple4]" + text + "[/purple4]")
 
+#hier async nicht vergessen: await asyncInfo(...)
+async def asyncInfo(text: str):
+    async with _console_lock:
+        console.print("[deep_sky_blue2][[/deep_sky_blue2][green]*[/green][deep_sky_blue2]][/deep_sky_blue2] " + text)
+
+async def asyncWarning(text: str):
+    async with _console_lock:
+        console.print("[deep_sky_blue2][[/deep_sky_blue2][yellow]*[/yellow][deep_sky_blue2]][/deep_sky_blue2] [yellow]" + text + "[/yellow]")
+
+async def asyncError(text: str):
+    async with _console_lock:
+        console.print("[deep_sky_blue2][[/deep_sky_blue2][red]*[/red][deep_sky_blue2]][/deep_sky_blue2] [red]" + text + "[/red]")
+
+async def asyncDebug(text: str):
+    if debug_mode:
+        async with _console_lock:
+            console.print("[deep_sky_blue2][[/deep_sky_blue2][purple4]*[/purple4][deep_sky_blue2]][/deep_sky_blue2] [purple4]" + text + "[/purple4]")
 
 def pYesNoQuestion(text: str):
     """Stellt dem Benutzer eine Ja-/Nein-Frage im passenden Stil."""

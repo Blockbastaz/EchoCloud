@@ -1,20 +1,23 @@
 
 server:
   default_path: "../Cloud/running/static"
-  version: "paper-1.21.1-133.jar"
-  check_delay: 10            # Zeit in Sekunden nach Start, um den Online-Status zu prüfen
+  heartbeat_delay: 10        # Intervall des Heartbeats von jedem Server. Dies updatet alle LaufzeitInfos von jedem Server.
 
 cloud:
   autoregister: true         # Server aus dem Standardpfad automatisch registrieren
   debug_mode: false          # Entwicklernachrichten aktivieren
-  host: "localhost"          # Adresse von EchoCloud
-  port: 9989                 # Port von EchoCloud
+  host: "127.0.0.1"          # Adresse von EchoCloud WebSocket / Redis Server. Diese Adresse muss auch Bei allen Servern Angegeben werden!
+  port: 6379                 # Port von EchoCloud WebSocket / Redis Server.
 
 network:
-  use_https: true            # HTTPS für Server-Kommunikation aktivieren
-  auto_cert: true            # HTTPS-Zertifikat automatisch generieren
-  auto_api: false            # API Automatisch beim start von EchoCloud Starten
-  cert_duration_days: 365    # Gültigkeitsdauer des Zertifikats
+  communication_type: "redis"          # Kommunikationsart "Redis" oder "Websocket"
+  redis_channel: "echocloud:all"       # Redis Channel Name. Wird nur benötigt wenn communication_type: "Redis"
+  redis_user: "default"                # Redis Benutzer. Falls du keinen Angelegt hast lasse "default"
+  redis_password: "2487892374983"      # Redis Passwort falls gesetzt. Du kannst dein Redis Password unter .. ändern. Suche nach requirepass [passwort]
+  use_https: true                      # HTTPS für Server-Kommunikation aktivieren
+  auto_cert: true                      # HTTPS-Zertifikat automatisch generieren
+  auto_api: true                       # API Automatisch beim start von EchoCloud Starten
+  cert_duration_days: 365              # Gültigkeitsdauer des Zertifikats
   auth_config_path: "./config/auth_tokens.yaml"    # Pfad von auth_tokens.yaml
   cert_file_path: "./config/cert.pem"              # Pfad zum Zertifikat
   key_file_path: "./config/key.pem"                # Pfad zum Schlüssel des Zertifikats
