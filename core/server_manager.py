@@ -452,7 +452,7 @@ class Server:
             "Laufzeit": self.get_uptime(),
         }
 
-    def get_status(self):
+    def display_status(self):
         status = "Online" if self.is_running else "Offline"
         status_color = "green" if self.is_running else "red"
         status_symbol = "🟢" if self.is_running else "🔴"

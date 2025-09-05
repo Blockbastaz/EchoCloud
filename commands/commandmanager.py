@@ -60,12 +60,6 @@ class CommandManager:
     def register_command(self, name, func):
         self.commands[name] = func
 
-    def get_prompt(self):
-        if self.selected_server is None:
-            return Prompt.ask("[blue]echocloud[/blue] > ")
-        else:
-            return Prompt.ask(f"[blue]echocloud[/blue] ([cyan]{self.selected_server.module_id}[/cyan]) > ")
-
     def handle_command(self, entered: str):
         entered = entered.strip()
         if not entered:
@@ -76,19 +70,13 @@ class CommandManager:
 
         if cmd in self.commands:
             self.commands[cmd](args)
-        elif self.selected_server and cmd in self.selected_server.methods:
-            self.call_server_method(cmd, args)
         else:
             utils.pWarning("Unbekannter Befehl. Tippe 'help' für eine Liste.")
-
-
-    # Commands
 
     def cmd_status(self, args):
         """Zeigt Status des ausgewählten Servers an"""
         if self.selected_server:
-            status = self.selected_server.get_status()  # Beispielmethode
-            utils.pInfo(f"Status von [cyan]{self.selected_server.server_id}[/cyan]: \n{status}")
+            self.selected_server.display_status()  # Beispielmethode
         else:
             utils.pWarning("Kein Server ausgewählt. Nutze 'servers' um Server anzuzeigen.")
 
