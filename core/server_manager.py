@@ -81,7 +81,8 @@ class ServerManager:
                 java_memory=cfg.get("java_memory", {"Xmx": "1024M", "Xms": "1024M"}),
                 server_state=ServerState.OFFLINE,
                 software=software,
-                software_version=software_version
+                software_version=software_version,
+                run_sh_path=cfg.get("run_sh_path", "Unknown")
             )
             self.servers.append(server)
             version_info = f" v{software_version}" if software_version else ""
@@ -275,7 +276,7 @@ class ServerManager:
                 pInfo("OK, keine Configs erstellt.")
 
             choice = Prompt.ask(
-                r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du EchoCloud Jetzt Neustarten um alle AuthTokens Automatisch zu generieren?: ").strip().lower()
+                r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > Möchtest du EchoCloud Jetzt Neustarten um alle AuthTokens Automatisch zu generieren? (y/n): ").strip().lower()
             if choice == "y":
                 os.system("clear")
                 os.execv(sys.executable, [sys.executable] + sys.argv)
@@ -315,7 +316,8 @@ class Server:
         java_memory: Optional[Dict[str, str]] = None,
         server_state: ServerState = ServerState.OFFLINE,
         software: Software = Software.UNKNOWN,
-        software_version: Optional[str] = "Unknown"
+        software_version: Optional[str] = "Unknown",
+        run_sh_path: str = None
     ):
         self.server_state = server_state
         self.server_id: str = server_id
@@ -324,7 +326,7 @@ class Server:
         self.port: int = port
         self.server_type: str = server_type
         self.config_path: str = config_path
-        self.run_sh_path: str = "Unknown"
+        self.run_sh_path: str = run_sh_path
         self.software: Software = software
         self.software_version: Optional[str] = software_version
 
@@ -352,13 +354,14 @@ class Server:
         self.last_output_lines: List[str] = []
 
     def start(self):
+
+        if self.run_sh_path == "Unknown":
+            pError(f"Keine run.sh für Server '{self.name}' gefunden.")
+            return
+
         self.is_running = True
         self.start_time = datetime.now()
-        pInfo(f"[INFO] Server '{self.name}' wurde gestartet.")
-
-        if not self.run_sh_path:
-            pError(f"[ERROR] Keine run.sh für Server '{self.name}' gefunden.")
-            return
+        pInfo(f"Server '{self.name}' wurde gestartet.")
 
         try:
             # Screen-Name aus run.sh extrahieren
@@ -381,20 +384,20 @@ class Server:
 
             self.is_running = True
             self.start_time = datetime.now()
-            pInfo(f"[INFO] Server '{self.name}' wurde gestartet (Screen: {self.screen_name}).")
+            pInfo(f"Server '{self.name}' wurde gestartet (Screen: {self.screen_name}).")
 
         except Exception as e:
-            pError(f"[ERROR] Konnte Server '{self.name}' nicht starten: {e}")
+            pError(f"Konnte Server '{self.name}' nicht starten: {e}")
 
 
 
     def stop(self):
         self.is_running = False
         self.start_time = None
-        pInfo(f"[INFO] Server '{self.name}' wurde gestoppt.")
+        pInfo(f"Server '{self.name}' wurde gestoppt.")
 
         if not hasattr(self, "screen_name") or not self.screen_name:
-            pError(f"[ERROR] Kein Screen-Name bekannt für '{self.name}', kann nicht stoppen.")
+            pError(f"Kein Screen-Name bekannt für '{self.name}', kann nicht stoppen.")
             return
 
         try:
@@ -405,9 +408,9 @@ class Server:
             self.server_state = ServerState.STOPPING # Auf antwort per API warten bis server -> OFFLINE
             self.is_running = False
             self.start_time = None
-            pInfo(f"[INFO] Stop-Befehl an Server '{self.name}' (Screen: {self.screen_name}) gesendet.")
+            pInfo(f"Stop-Befehl an Server '{self.name}' (Screen: {self.screen_name}) gesendet.")
         except Exception as e:
-            pError(f"[ERROR] Konnte Server '{self.name}' nicht stoppen: {e}")
+            pError(f"Konnte Server '{self.name}' nicht stoppen: {e}")
 
     def update_metrics(self, tps: float, cpu_usage: float, ram_usage: float):
         self.tps = round(tps, 2)
@@ -453,7 +456,7 @@ class Server:
         }
 
     def display_status(self):
-        status = "Online" if self.is_running else "Offline"
+        status = self.server_state.value
         status_color = "green" if self.is_running else "red"
         status_symbol = "🟢" if self.is_running else "🔴"
 

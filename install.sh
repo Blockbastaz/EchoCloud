@@ -51,6 +51,6 @@ else
 fi
 
 success "Installation fertig! EchoCloud wird jetzt gestartet..."
+chmod +x run.sh
 
-# EchoCloud starten (hier anpassen falls nötig)
-python main.py
+./run.sh

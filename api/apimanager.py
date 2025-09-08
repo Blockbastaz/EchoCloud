@@ -46,14 +46,13 @@ class APIManager:
         self.host: str = host
         self.port: int = port
         self.cert_duration_days = cert_duration_days
-        self.clients: Dict[str, WebSocket] = {}  # server_id -> websocket
+        self.clients: Dict[str, WebSocket] = {}
         self.thread = None
         self.server = None
-        self.heartbeat_delay: bool = heartbeat_delay
-        self.heartbeat_task: bool = None
+        self.heartbeat_delay: int = heartbeat_delay
+        self.heartbeat_task = None
         self.heartbeat_running: bool = False
         self.storage_manager: StorageManager = storage_manager
-        self.communication_type: str = communication_type
         self.communication_type: str = communication_type.lower()
         self.redis = None
         self.redis_pubsub = None
@@ -61,8 +60,8 @@ class APIManager:
         self.redis_channel: str = redis_channel
         self.redis_password: str = redis_password
         self.redis_user: str = redis_user
+        self.should_stop: bool = False  # ADD THIS: Shutdown flag
 
-        # Lade sichere Tokens
         self.auth_tokens: Dict[str, str] = self.load_auth_tokens(auth_config_path)
 
         self.app = FastAPI()
@@ -99,22 +98,29 @@ class APIManager:
             await self.redis_pubsub.subscribe("echocloud:all")
 
             async def reader():
-                async for message in self.redis_pubsub.listen():
-                    if message["type"] == "message":
-                        try:
-                            data = json.loads(message["data"])
-                            server_id = data.get("server_id")
-                            msg_type = data.get("type")
-                            if msg_type == "heartbeat_response":
-                                self.process_heartbeat_response(server_id, data)
-                            else:
-                                pInfo(f"[Redis Daten] {server_id}: {data}")
-                        except Exception as e:
-                            pWarning(f"Redis Nachricht Fehler: {e}")
+                try:
+                    async for message in self.redis_pubsub.listen():
+                        if self.should_stop:
+                            break
+                        if message["type"] == "message":
+                            try:
+                                data = json.loads(message["data"])
+                                server_id = data.get("server_id")
+                                msg_type = data.get("type")
+                                if msg_type == "heartbeat_response":
+                                    self.process_heartbeat_response(server_id, data)
+                                else:
+                                    pInfo(f"[Redis Daten] {server_id}: {data}")
+                            except Exception as e:
+                                if not self.should_stop:
+                                    pWarning(f"Redis Nachricht Fehler: {e}")
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    if not self.should_stop:
+                        pWarning(f"Redis Reader Fehler: {e}")
 
-            # Reader-Task starten
             self.redis_task = asyncio.create_task(reader())
-            # Heartbeat auch im Redis-Mode starten
             self.start_heartbeat()
             pInfo("Redis Kommunikation gestartet ✓")
 
@@ -145,9 +151,9 @@ class APIManager:
 
     async def heartbeat_loop(self):
         """Sendet regelmäßig Heartbeats"""
-        while self.heartbeat_running:
+        while self.heartbeat_running and not self.should_stop:
             try:
-                if self.communication_type == "websocket":
+                if self.communication_type == "websocket": # Websocket
                     for server_id, websocket in list(self.clients.items()):
                         try:
                             heartbeat_request = {
@@ -165,19 +171,28 @@ class APIManager:
                                 server.is_running = False
                                 server.start_time = None
                 else:  # Redis
-                    for server in self.server_manager.servers:
-                        heartbeat_request = {
-                            "type": "heartbeat_request",
-                            "server_id": server.server_id,
-                            "timestamp": datetime.now().isoformat()
-                        }
-                        await self.redis.publish(f"echocloud:{server.server_id}", json.dumps(heartbeat_request))
-                        pDebug(f"Heartbeat-Request an {server.server_id} über Redis gesendet")
+                    if self.redis and not self.should_stop:
+                        for server in self.server_manager.servers:
+                            heartbeat_request = {
+                                "type": "heartbeat_request",
+                                "server_id": server.server_id,
+                                "timestamp": datetime.now().isoformat()
+                            }
+                            try:
+                                await self.redis.publish(f"echocloud:{server.server_id}", json.dumps(heartbeat_request))
+                                pDebug(f"Heartbeat-Request an {server.server_id} über Redis gesendet")
+                            except Exception as e:
+                                if not self.should_stop:
+                                    pWarning(f"Redis Heartbeat Fehler: {e}")
+                                break
 
                 await asyncio.sleep(self.heartbeat_delay)
+            except asyncio.CancelledError:
+                break
             except Exception as e:
-                pWarning(f"Fehler im Heartbeat-Loop: {e}")
-                await asyncio.sleep(1)
+                if not self.should_stop:
+                    pWarning(f"Fehler im Heartbeat-Loop: {e}")
+                    await asyncio.sleep(1)
 
     def start_heartbeat(self):
         if not self.heartbeat_running:
@@ -271,7 +286,6 @@ class APIManager:
                     except json.JSONDecodeError:
                         pInfo(f"[Daten] {server_id}: {data}")
 
-
             except WebSocketDisconnect:
                 self.clients.pop(server_id, None)
                 pWarning(f"Verbindung getrennt: {server_id}")
@@ -292,7 +306,6 @@ class APIManager:
 
         @self.app.get("/api/servers")
         async def get_servers():
-            """Gibt alle Server mit aktuellen Status-Informationen zurück"""
             servers_data = []
             for server in self.server_manager.servers:
                 server_info = {
@@ -321,7 +334,6 @@ class APIManager:
 
         @self.app.get("/api/server/{server_id}")
         async def get_server(server_id: str):
-            """Gibt detaillierte Informationen über einen spezifischen Server zurück"""
             server = self.server_manager.get_server_by_id(server_id)
             if not server:
                 raise HTTPException(status_code=404, detail="Server nicht gefunden")
@@ -378,14 +390,13 @@ class APIManager:
             data = await request.json()
             player_name = data.get("playerName")
             player_uuid = data.get("uuid")
-            action = data.get("action")  # "join" oder "leave"
+            action = data.get("action")
             forced = data.get("forced", False)
             now = datetime.now()
 
             if not player_name or action not in ("join", "leave"):
                 raise HTTPException(status_code=400, detail="Ungültige Log-Daten")
 
-            # Abrufen bestehender Logs aus DB
             logs_key = f"logs:{server_id}:{player_name}:{player_uuid}"
             logs = self.storage_manager.get_data(logs_key) or {
                 "player": player_name,
@@ -422,7 +433,6 @@ class APIManager:
 
             return JSONResponse({"status": "success", "logs": logs})
 
-
     async def send_message(self, server_id: str, message: str):
         if self.communication_type == "websocket":
             websocket = self.clients.get(server_id)
@@ -444,21 +454,60 @@ class APIManager:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        if self.communication_type == "redis":
-            loop.run_until_complete(self.init_redis())
-            loop.run_forever()
-        else:
-            config = uvicorn.Config(
-                self.app,
-                host=self.host,
-                port=self.port,
-                log_level="info",
-                ssl_certfile=self.cert_file_path if self.use_https else None,
-                ssl_keyfile=self.key_file_path if self.use_https else None
-            )
-            self.server = uvicorn.Server(config)
-            loop.run_until_complete(self.server.serve())
-            pInfo("Cloud Manager API [green]Online[/green] ✓")
+        async def cleanup_and_exit():
+            if self.redis_task:
+                self.redis_task.cancel()
+                try:
+                    await self.redis_task
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    pWarning(f"Fehler beim Beenden des Redis Tasks: {e}")
+
+            if self.redis_pubsub:
+                try:
+                    await self.redis_pubsub.unsubscribe()
+                    await self.redis_pubsub.close()
+                except Exception as e:
+                    pWarning(f"Fehler beim Schließen von Redis PubSub: {e}")
+
+            if self.redis:
+                try:
+                    await self.redis.close()
+                except Exception as e:
+                    pWarning(f"Fehler beim Schließen von Redis: {e}")
+
+        try:
+            if self.communication_type == "redis":
+                loop.run_until_complete(self.init_redis())
+
+                async def wait_for_stop():
+                    while not self.should_stop:
+                        await asyncio.sleep(0.1)
+
+                loop.run_until_complete(wait_for_stop())
+                loop.run_until_complete(cleanup_and_exit())
+            else:
+                config = uvicorn.Config(
+                    self.app,
+                    host=self.host,
+                    port=self.port,
+                    log_level="info",
+                    ssl_certfile=self.cert_file_path if self.use_https else None,
+                    ssl_keyfile=self.key_file_path if self.use_https else None
+                )
+                self.server = uvicorn.Server(config)
+                loop.run_until_complete(self.server.serve())
+                pInfo("Cloud Manager API [green]Online[/green] ✓")
+        except Exception as e:
+            pError(f"Fehler im API Manager Loop: {e}")
+        finally:
+            if self.communication_type == "redis":
+                try:
+                    loop.run_until_complete(cleanup_and_exit())
+                except Exception as e:
+                    pWarning(f"Fehler beim Cleanup: {e}")
+            loop.close()
 
     def start_in_thread(self):
         self.thread = threading.Thread(target=self._run_loop, daemon=True)
@@ -468,19 +517,18 @@ class APIManager:
         pInfo("Cloud Manager API [red]Offline[/red] ✓")
         self.stop_heartbeat()
 
-        if self.communication_type == "redis":
-            if self.redis_task:
-                self.redis_task.cancel()
-                self.redis_task = None
-            if self.redis:
-                try:
-                    asyncio.run(self.redis.close())
-                except Exception as e:
-                    pWarning(f"Fehler beim Schließen von Redis: {e}")
-                self.redis = None
-        else:
+        self.should_stop = True
+
+        if self.communication_type != "redis":
             if hasattr(self, "server") and self.server:
                 self.server.should_exit = True
 
+        # Wait for thread to finish with timeout
         if hasattr(self, "thread") and self.thread:
-            self.thread.join()
+            self.thread.join(timeout=5.0)
+            if self.thread.is_alive():
+                pWarning("Thread did not stop within timeout, but continuing shutdown...")
+
+        self.redis = None
+        self.redis_pubsub = None
+        self.redis_task = None

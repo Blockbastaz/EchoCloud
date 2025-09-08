@@ -10,4 +10,3 @@ mysql~=0.0.3
 mysql-connector-python~=9.4.0
 psycopg2-binary~=2.9.10 # WARNUNG NUR BINARY !!!
 JayDeBeApi~=1.2.3
-jaydebeapi3~=0.0.0.1
