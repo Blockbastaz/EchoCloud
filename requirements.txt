@@ -1,11 +1,12 @@
 asyncio~=3.4.3
 uvicorn~=0.35.0
 PyYAML~=6.0.2
-redis~=6.4.0
+redis>=5.0.0,<6.0.0
+Booktype~=1.5
 DateTime~=5.5
 fastapi~=0.116.1
 rich~=14.0.0
-cryptography~=44.0.2
+cryptography~=44.0.3
 mysql~=0.0.3
 mysql-connector-python~=9.4.0
 psycopg2-binary~=2.9.10 # WARNUNG NUR BINARY !!!

@@ -35,6 +35,7 @@ class CommandManager:
         self.register_command("debug", self.cmd_debug)
         self.register_command("reload", self.cmd_reload)
         self.register_command("startapi", self.cmd_startapi)
+        self.register_command("execute", self.cmd_execute)
         self.register_command("exit", self.cmd_exit)
 
         self.add_default_commands()
@@ -52,6 +53,7 @@ class CommandManager:
         self.add_help_message("autoscan", "Scannt nach neuen Servern")
         self.add_help_message("help", "Diese Hilfe anzeigen")
         self.add_help_message("startapi", "Startet den API Webserver")
+        self.add_help_message("execute", "Fürt einen Befehl auf einem Server aus")
         self.add_help_message("exit", "Stoppt EchoCloud")
 
     def add_help_message(self, command: str,  info: str):
@@ -129,6 +131,18 @@ class CommandManager:
             return
 
         self.selected_server.start()
+
+    def cmd_execute(self, args):
+        """Startet den ausgewählten Server"""
+        if not self.selected_server:
+            utils.pWarning("Kein Server ausgewählt.")
+            return
+
+        if not self.selected_server.is_running:
+            utils.pWarning("Server ist nicht online.")
+            return
+
+        self.selected_server.send_command(args)
 
     # TEST
     def cmd_stop(self, args):

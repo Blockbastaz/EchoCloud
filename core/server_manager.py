@@ -412,6 +412,21 @@ class Server:
         except Exception as e:
             pError(f"Konnte Server '{self.name}' nicht stoppen: {e}")
 
+    def send_command(self, *args: str):
+        if not hasattr(self, "screen_name") or not self.screen_name:
+            pError(f"Kein Screen-Name bekannt für '{self.name}', kann Befehl nicht senden.")
+            return
+
+        command = " ".join(args) + "\n"
+
+        try:
+            subprocess.run(
+                ["screen", "-S", self.screen_name, "-p", "0", "-X", "stuff", command],
+                check=True
+            )
+            pInfo(f"Befehl '{command.strip()}' an Server '{self.name}' (Screen: {self.screen_name}) gesendet.")
+        except Exception as e:
+            pError(f"Konnte Befehl nicht senden: {e}")
     def update_metrics(self, tps: float, cpu_usage: float, ram_usage: float):
         self.tps = round(tps, 2)
         self.cpu_usage = round(cpu_usage, 2)

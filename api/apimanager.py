@@ -21,6 +21,7 @@ import redis.asyncio as aioredis
 
 from utils.storagemanager import StorageManager
 
+
 class APIManager:
     def __init__(self,
                  server_manager: ServerManager,
@@ -60,7 +61,7 @@ class APIManager:
         self.redis_channel: str = redis_channel
         self.redis_password: str = redis_password
         self.redis_user: str = redis_user
-        self.should_stop: bool = False  # ADD THIS: Shutdown flag
+        self.should_stop: bool = False
 
         self.auth_tokens: Dict[str, str] = self.load_auth_tokens(auth_config_path)
 
@@ -83,16 +84,19 @@ class APIManager:
                 pInfo("HTTPS Zertifikat Importiert ✓")
             else:
                 if self.autocert:
-                    generate_self_signed_cert(cert_path=self.cert_file_path, key_path=self.key_file_path, host=self.host,
-                                      cert_duration_days=self.cert_duration_days)
+                    generate_self_signed_cert(cert_path=self.cert_file_path, key_path=self.key_file_path,
+                                              host=self.host,
+                                              cert_duration_days=self.cert_duration_days)
                     pInfo("HTTPS Zertifikat Erstellt ✓")
                 else:
-                    pError("HTTPS Zertifikat nicht gefunden. Autocert ist Deaktiviert, weshalb es nicht automatisch erstellt wird. Aktiviere Autocert in config/settings.yaml")
+                    pError(
+                        "HTTPS Zertifikat nicht gefunden. Autocert ist Deaktiviert, weshalb es nicht automatisch erstellt wird. Aktiviere Autocert in config/settings.yaml")
 
     async def init_redis(self):
         """Initialisiert Redis Verbindung wenn communication_type=redis"""
         if self.redis is None:
-            self.redis = aioredis.from_url(f"redis://{self.host}:{self.port}", password=self.redis_password,decode_responses=True)
+            self.redis = aioredis.from_url(f"redis://{self.host}:{self.port}", password=self.redis_password,
+                                           decode_responses=True)
             self.redis_pubsub = self.redis.pubsub()
 
             await self.redis_pubsub.subscribe("echocloud:all")
@@ -109,6 +113,8 @@ class APIManager:
                                 msg_type = data.get("type")
                                 if msg_type == "heartbeat_response":
                                     self.process_heartbeat_response(server_id, data)
+                                elif msg_type == "shutdown_notification":
+                                    self.process_shutdown_notification(server_id, data)
                                 else:
                                     pInfo(f"[Redis Daten] {server_id}: {data}")
                             except Exception as e:
@@ -153,7 +159,7 @@ class APIManager:
         """Sendet regelmäßig Heartbeats"""
         while self.heartbeat_running and not self.should_stop:
             try:
-                if self.communication_type == "websocket": # Websocket
+                if self.communication_type == "websocket":  # Websocket
                     for server_id, websocket in list(self.clients.items()):
                         try:
                             heartbeat_request = {
@@ -167,9 +173,7 @@ class APIManager:
                             self.clients.pop(server_id, None)
                             server = self.server_manager.get_server_by_id(server_id)
                             if server:
-                                server.server_state = ServerState.OFFLINE
-                                server.is_running = False
-                                server.start_time = None
+                                self.reset_server_runtime_data(server)
                 else:  # Redis
                     if self.redis and not self.should_stop:
                         for server in self.server_manager.servers:
@@ -198,7 +202,7 @@ class APIManager:
         if not self.heartbeat_running:
             self.heartbeat_running = True
             self.heartbeat_task = asyncio.create_task(self.heartbeat_loop())
-            print("\n") # Wegen Zeilen Bug. Nachricht Kommt aus anderer Thread. Wiederspricht sich mit Commandmanager.
+            print("\n")  # Wegen Zeilen Bug. Nachricht Kommt aus anderer Thread. Wiederspricht sich mit Commandmanager.
             pInfo(f"Heartbeat-System gestartet (Intervall: {self.heartbeat_delay}s)")
 
     def stop_heartbeat(self):
@@ -206,6 +210,30 @@ class APIManager:
         if self.heartbeat_task:
             self.heartbeat_task.cancel()
             pInfo("Heartbeat-System gestoppt")
+
+    def reset_server_runtime_data(self, server):
+        """Setzt alle Laufzeit-Informationen des Servers zurück"""
+        server.server_state = ServerState.OFFLINE
+        server.is_running = False
+        server.start_time = None
+        server.tps = 0.0
+        server.cpu_usage = 0.0
+        server.ram_usage_mb = 0.0
+        server.players_online = []
+        server.max_players = 0
+
+    def process_shutdown_notification(self, server_id: str, data: dict):
+        """Verarbeitet Shutdown-Benachrichtigungen von Servern"""
+        server = self.server_manager.get_server_by_id(server_id)
+        if not server:
+            pWarning(f"Unbekannter Server bei Shutdown: {server_id}")
+            return
+
+        # Server aus Client-Liste entfernen falls vorhanden
+        self.clients.pop(server_id, None)
+
+        # Alle Laufzeit-Daten zurücksetzen
+        self.reset_server_runtime_data(server)
 
     def process_heartbeat_response(self, server_id: str, data: dict):
         server = self.server_manager.get_server_by_id(server_id)
@@ -222,6 +250,11 @@ class APIManager:
                 server.is_running = data.get("is_running", False)
                 server.server_state = ServerState.ONLINE if server.is_running else ServerState.OFFLINE
 
+            # Wenn Server nicht mehr läuft, Daten zurücksetzen
+            if not server.is_running:
+                self.reset_server_runtime_data(server)
+                return
+
             if server.is_running and not server.start_time:
                 start_time_str = data.get("start_time")
                 if start_time_str:
@@ -231,8 +264,6 @@ class APIManager:
                         server.start_time = datetime.now()
                 else:
                     server.start_time = datetime.now()
-            elif not server.is_running:
-                server.start_time = None
 
             tps = data.get("tps")
             cpu_usage = data.get("cpu_usage")
@@ -281,6 +312,8 @@ class APIManager:
 
                         if message_type == "heartbeat_response":
                             self.process_heartbeat_response(server_id, json_data)
+                        elif message_type == "shutdown_notification":
+                            self.process_shutdown_notification(server_id, json_data)
                         else:
                             pInfo(f"[Daten] {server_id}: {data}")
                     except json.JSONDecodeError:
@@ -292,13 +325,16 @@ class APIManager:
 
                 server = self.server_manager.get_server_by_id(server_id)
                 if server:
-                    if server.server_state != ServerState.STOPPING:
+                    # Unterscheidung zwischen ordnungsgemäßem Shutdown und Crash
+                    if server.server_state == ServerState.STOPPING:
+                        server.server_state = ServerState.OFFLINE
+                        pInfo(f"Server {server_id} ordnungsgemäß heruntergefahren")
+                    else:
                         server.server_state = ServerState.CRASHED
                         pWarning(f"Server {server_id} unerwartet abgestürzt")
-                    else:
-                        server.server_state = ServerState.OFFLINE
-                    server.is_running = False
-                    server.start_time = None
+
+                    # In beiden Fällen Laufzeit-Daten zurücksetzen
+                    self.reset_server_runtime_data(server)
 
         @self.app.get("/api/ping")
         async def ping():
