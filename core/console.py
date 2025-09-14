@@ -1,8 +1,11 @@
+import sys
 from typing import AnyStr
+import termios
 
 from rich.console import Console
 from rich.prompt import Prompt
 import asyncio
+import atexit
 from core import debug_mode
 
 _console_lock = asyncio.Lock()
@@ -63,3 +66,21 @@ def pYesNoQuestion(text: str):
             return answer == "j"
 def clearConsole():
     console.clear()
+
+def reset_terminal_force():
+    """Setzt das Terminal IMMER zurück, egal was passiert."""
+    try:
+        # Rohmodus ausschalten, normales Terminal wiederherstellen
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, termios.tcgetattr(sys.stdin))
+    except Exception:
+        pass
+    sys.stdout.write("\n")
+    sys.stdout.flush()
+
+def global_exception_handler(exctype, value, traceback):
+    reset_terminal_force()
+    sys.__excepthook__(exctype, value, traceback)
+
+def register_reset_at_shutdown():
+    atexit.register(reset_terminal_force)
+    sys.excepthook = global_exception_handler

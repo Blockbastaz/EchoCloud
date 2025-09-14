@@ -13,6 +13,7 @@ from utils.storagemanager import StorageManager
 if TYPE_CHECKING:
     from core.server_manager import Server
 
+
 class CommandManager:
     def __init__(self, server_manager: 'ServerManager', api_manager: APIManager, storage_manager: StorageManager):
         self.server_manager: ServerManager = server_manager
@@ -53,14 +54,53 @@ class CommandManager:
         self.add_help_message("autoscan", "Scannt nach neuen Servern")
         self.add_help_message("help", "Diese Hilfe anzeigen")
         self.add_help_message("startapi", "Startet den API Webserver")
-        self.add_help_message("execute", "Fürt einen Befehl auf einem Server aus")
+        self.add_help_message("execute <command>", "Führt einen Befehl auf einem Server aus")
         self.add_help_message("exit", "Stoppt EchoCloud")
 
-    def add_help_message(self, command: str,  info: str):
+    def add_help_message(self, command: str, info: str):
         self.command_infos.append((command, info))
 
     def register_command(self, name, func):
         self.commands[name] = func
+
+    def get_command_completions(self, text: str) -> List[str]:
+        """Get list of commands that start with the given text"""
+        return [cmd for cmd in self.commands.keys() if cmd.startswith(text.lower())]
+
+    def get_server_completions(self, text: str) -> List[str]:
+        """Get list of server IDs and names that start with the given text"""
+        if not self.server_manager.servers:
+            return []
+
+        completions = []
+        for server in self.server_manager.servers:
+            if server.server_id.startswith(text):
+                completions.append(server.server_id)
+            if server.name.startswith(text):
+                completions.append(server.name)
+
+        return completions
+
+    def get_completions_for_command(self, command: str, args: str) -> List[str]:
+        """Get completions based on command context"""
+        command = command.lower()
+
+        if command == "select":
+            return self.get_server_completions(args)
+        elif command == "config" and self.selected_server:
+            # Add config key completions if server is selected
+            if hasattr(self.selected_server, 'java_memory'):
+                return [key for key in self.selected_server.java_memory.keys() if key.startswith(args)]
+        elif command == "execute" and self.selected_server:
+            # Common Minecraft server commands for tab completion
+            common_commands = [
+                "say", "stop", "reload", "whitelist", "op", "deop", "kick", "ban",
+                "pardon", "gamemode", "tp", "give", "time", "weather", "difficulty",
+                "gamerule", "seed", "list", "save-all", "save-off", "save-on"
+            ]
+            return [cmd for cmd in common_commands if cmd.startswith(args)]
+
+        return []
 
     def handle_command(self, entered: str):
         entered = entered.strip()
@@ -93,31 +133,61 @@ class CommandManager:
         for server in self.server_manager.servers:
             status = "[green]🟢 Online[/green]" if server.is_running else "[red]🔴 Offline[/red]"
             utils.pInfo(f" - [cyan]{server.server_id}[/cyan]: {server.name} ({status})")
+
     # TEST
     def cmd_select(self, args):
         """Wählt einen Server zum Verwalten aus"""
         if not args:
-            utils.pWarning("Bitte Server-ID angeben: select <server_id>")
+            utils.pWarning("Bitte Server-ID oder Namen angeben: select <server_id|server_name>")
+            if self.server_manager.servers:
+                utils.pInfo("Verfügbare Server:")
+                for server in self.server_manager.servers:
+                    utils.pInfo(f" - {server.server_id}: {server.name}")
             return
 
+        # Try to find server by ID first, then by name
         server = self.server_manager.get_server_by_id(args)
+        if not server:
+            # Try to find by name
+            for s in self.server_manager.servers:
+                if s.name.lower() == args.lower():
+                    server = s
+                    break
+
         if server:
             self.selected_server = server
             utils.pInfo(f"Server [cyan]{server.name}[/cyan] wurde ausgewählt.")
         else:
-            utils.pWarning(f"Server mit ID '{args}' wurde nicht gefunden.")
+            utils.pWarning(f"Server mit ID/Namen '{args}' wurde nicht gefunden.")
 
     # TEST
     def cmd_config(self, args):
-        """Zeigt Konfiguration des Servers"""
+        """Zeigt oder setzt Konfiguration des Servers"""
         if not self.selected_server:
             utils.pWarning("Kein Server ausgewählt.")
             return
 
-        #TODO Gesamte Konfiguration des Server anzeigen!
-        utils.pInfo("Server-Konfiguration:")
-        for key, value in self.selected_server.java_memory.items():
-            utils.pInfo(f"  {key}: {value}")
+        if not args:
+            # Show all config
+            utils.pInfo("Server-Konfiguration:")
+            if hasattr(self.selected_server, 'java_memory'):
+                for key, value in self.selected_server.java_memory.items():
+                    utils.pInfo(f"  {key}: {value}")
+        else:
+            # Handle config get/set
+            config_parts = args.split(" ", 1)
+            key = config_parts[0]
+
+            if len(config_parts) == 1:
+                # Get specific config value
+                if hasattr(self.selected_server, 'java_memory') and key in self.selected_server.java_memory:
+                    utils.pInfo(f"{key}: {self.selected_server.java_memory[key]}")
+                else:
+                    utils.pWarning(f"Konfigurationskey '{key}' nicht gefunden.")
+            else:
+                # Set config value
+                value = config_parts[1]
+                utils.pInfo(f"TODO: Setze {key} = {value}")
 
     # TEST
     def cmd_start(self, args):
@@ -133,7 +203,7 @@ class CommandManager:
         self.selected_server.start()
 
     def cmd_execute(self, args):
-        """Startet den ausgewählten Server"""
+        """Führt einen Befehl auf dem Server aus"""
         if not self.selected_server:
             utils.pWarning("Kein Server ausgewählt.")
             return
@@ -142,6 +212,11 @@ class CommandManager:
             utils.pWarning("Server ist nicht online.")
             return
 
+        if not args:
+            utils.pWarning("Bitte Befehl angeben: execute <command>")
+            return
+
+        utils.pInfo(f"Führe Befehl aus: {args}")
         self.selected_server.send_command(args)
 
     # TEST
@@ -157,7 +232,6 @@ class CommandManager:
 
         self.selected_server.stop()
 
-
     # TEST
     def cmd_logs(self, args):
         """Zeigt letzte Log-Zeilen des Servers"""
@@ -169,14 +243,18 @@ class CommandManager:
             utils.pInfo("Keine Logs verfügbar.")
             return
 
-    #TODO server reloaden via /reload
+        utils.pInfo("Server Logs:")
+        for line in self.selected_server.last_output_lines[-20:]:  # Show last 20 lines
+            utils.pInfo(line)
+
+    # TODO server reloaden via /reload
     def cmd_reload(self, args):
         """Lädt Server-Konfiguration neu"""
         if not self.selected_server:
             utils.pWarning("Kein Server ausgewählt.")
             return
 
-        utils.pInfo(f"TODO!")
+        utils.pInfo(f"TODO: Reload {self.selected_server.name}")
 
     def cmd_debug(self, args):
         """Aktiviert/Deaktiviert Entwickler Modus"""
@@ -194,23 +272,23 @@ class CommandManager:
         for cmd, description in self.command_infos:
             utils.pInfo(f" - {cmd:<18} -> {description}")
 
+        utils.pInfo("\nTipps:")
+        utils.pInfo(" - Nutze TAB für Auto-Completion")
+        utils.pInfo(" - Nutze Pfeiltasten ↑/↓ für Command History")
+
     def cmd_autoscan(self, args):
         """Importiert automatisch neue Server"""
         self.server_manager.scan_servers()
         utils.pInfo(f"Server Erfolgreich gescannt.")
 
-
     def cmd_startapi(self, args):
-        """Importiert automatisch neue Server"""
+        """Startet den API Webserver"""
         self.api_manager.start_in_thread()
         utils.pInfo(f"API Webserver gestartet.")
 
-
     def cmd_exit(self, args):
-        """Importiert automatisch neue Server"""
+        """Beendet EchoCloud"""
         self.api_manager.stop_thread()
         self.storage_manager.close()
         utils.pInfo(f"[red]Bye Bye...[/red]")
         sys.exit(-1)
-
-

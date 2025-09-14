@@ -1,10 +1,9 @@
-from rich.prompt import Prompt
+import locale
+import sys
 
-from commands.commandmanager import CommandManager
-from core.console import showClientInfo, showBanner, pInfo
-from core.server_manager import ServerManager
 from api.apimanager import APIManager
-from utils.storagemanager import StorageManager
+from commands.commandcompleter import setup_readline, safe_input_with_readline
+from commands.commandmanager import CommandManager
 from core import (host,
                   port,
                   auth_config_path,
@@ -25,11 +24,31 @@ from core import (host,
                   use_https,
                   redis_channel,
                   communication_type, redis_user, redis_password)
+from core.console import showClientInfo, showBanner, pInfo, register_reset_at_shutdown
+from core.server_manager import ServerManager
+from utils.storagemanager import StorageManager
+
+# Terminal Reset beim beenden
+register_reset_at_shutdown()
 
 
 # Pycharm importiert falsch fix -> psycopg2-binary~=2.9.10
 
 def main():
+    # UTF-8 erzwingen
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
+    if sys.stderr.encoding != 'utf-8':
+        sys.stderr.reconfigure(encoding='utf-8')
+
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    except locale.Error:
+        try:
+            locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+        except locale.Error:
+            pass
+
     servermanager = ServerManager()
 
     storagemanager = StorageManager(storage_type,
@@ -47,35 +66,45 @@ def main():
                             port=port,
                             auth_config_path=auth_config_path,
                             cert_file_path=cert_file_path,
-                            key_file_path=key_file_path
-                            , cert_duration_days=cert_days,
+                            key_file_path=key_file_path,
+                            cert_duration_days=cert_days,
                             heartbeat_delay=heartbeat_delay,
                             autocert=autocert,
                             use_https=use_https,
                             communication_type=communication_type,
-                            redis_channel=redis_channel, redis_user=redis_user, redis_password=redis_password)
+                            redis_channel=redis_channel,
+                            redis_user=redis_user,
+                            redis_password=redis_password)
 
     if auto_api:
         apimanager.start_in_thread()
 
     commandmanager = CommandManager(servermanager, apimanager, storagemanager)
+    setup_readline(commandmanager)
 
     showBanner()
     showClientInfo("1.0.3", str(len(servermanager.servers)))
 
-
     while True:
         try:
+            # Prompt als Klartext ausgeben, nicht mit rich
             if commandmanager.selected_server is None:
-                user_input = Prompt.ask(r"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] > ")
+                sys.stdout.write("EchoCloud > ")
             else:
-                user_input = Prompt.ask(f"[deep_sky_blue2]EchoCloud[/deep_sky_blue2] ([red]{commandmanager.selected_server.name}[/red]) > ")
+                sys.stdout.write(f"EchoCloud ({commandmanager.selected_server.name}) > ")
+            sys.stdout.flush()
 
+            # Eingabe lesen (mit readline)
+            user_input = safe_input_with_readline("")
             commandmanager.handle_command(user_input)
 
         except KeyboardInterrupt:
             pInfo("\n[bold red]Beende...[/bold red]")
             break
+        except EOFError:
+            pInfo("\n[bold red]Beende...[/bold red]")
+            break
+
 
 if __name__ == "__main__":
     main()

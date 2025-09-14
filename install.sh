@@ -35,7 +35,7 @@ sudo apt install -y python3 python3-venv python3-setuptools curl
 
 # Virtuelle Umgebung erstellen
 info "Virtuelle Umgebung wird erstellt..."
-python3 -m venv venv
+python3.12 -m venv venv
 
 # venv aktivieren und pip aktualisieren
 info "Virtuelle Umgebung wird aktiviert und pip aktualisiert..."
@@ -49,6 +49,9 @@ if [[ ! -f requirements.txt ]]; then
 else
   pip install -r requirements.txt
 fi
+
+info "Installiere Redis >= 7..."
+pip install --upgrade "redis>=7.0.0b1"
 
 success "Installation fertig! EchoCloud wird jetzt gestartet..."
 chmod +x run.sh

@@ -10,6 +10,6 @@ echo -e "${BLUE}[INFO]${NC} Starte EchoCloud..."
 
 source venv/bin/activate
 
-python main.py
+python3.12 main.py
 
 echo -e "${GREEN}[ERFOLG]${NC} EchoCloud wurde beendet."
