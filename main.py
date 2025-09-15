@@ -2,7 +2,7 @@ import locale
 import sys
 
 from api.apimanager import APIManager
-from commands.commandcompleter import setup_readline, safe_input_with_readline
+from commands.commandcompleter import setup_prompt_toolkit
 from commands.commandmanager import CommandManager
 from core import (host,
                   port,
@@ -80,22 +80,18 @@ def main():
         apimanager.start_in_thread()
 
     commandmanager = CommandManager(servermanager, apimanager, storagemanager)
-    setup_readline(commandmanager)
+
+    # Setup prompt_toolkit instead of readline
+    echo_prompt = setup_prompt_toolkit(commandmanager)
 
     showBanner()
     showClientInfo("1.0.3", str(len(servermanager.servers)))
 
     while True:
         try:
-            # Prompt als Klartext ausgeben, nicht mit rich
-            if commandmanager.selected_server is None:
-                sys.stdout.write("EchoCloud > ")
-            else:
-                sys.stdout.write(f"EchoCloud ({commandmanager.selected_server.name}) > ")
-            sys.stdout.flush()
-
-            # Eingabe lesen (mit readline)
-            user_input = safe_input_with_readline("")
+            # Mit prompt_toolkit ist kein manueller Prompt nötig
+            # Das Prompt wird automatisch von prompt_toolkit gehandelt
+            user_input = echo_prompt.get_input()
             commandmanager.handle_command(user_input)
 
         except KeyboardInterrupt:
@@ -104,6 +100,9 @@ def main():
         except EOFError:
             pInfo("\n[bold red]Beende...[/bold red]")
             break
+        except Exception as e:
+            print(f"Fehler: {e}")
+            continue
 
 
 if __name__ == "__main__":

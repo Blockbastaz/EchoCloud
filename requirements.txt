@@ -10,3 +10,4 @@ mysql==0.0.3
 mysql-connector-python==9.4.0
 psycopg2-binary==2.9.10
 JayDeBeApi==1.2.3
+prompt_toolkit==3.0.52

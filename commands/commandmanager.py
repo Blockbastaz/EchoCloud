@@ -118,7 +118,7 @@ class CommandManager:
     def cmd_status(self, args):
         """Zeigt Status des ausgewählten Servers an"""
         if self.selected_server:
-            self.selected_server.display_status()  # Beispielmethode
+            self.selected_server.display_status()
         else:
             utils.pWarning("Kein Server ausgewählt. Nutze 'servers' um Server anzuzeigen.")
 

@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import List, Dict, Optional
@@ -12,6 +12,7 @@ from rich.prompt import Prompt
 
 from core import settings, get_section
 from core.console import pError, pWarning, pInfo
+from utils.storagemanager import StorageManager
 
 
 class ServerState(Enum):
@@ -32,10 +33,11 @@ class Software(Enum):
 
 
 class ServerManager:
-    def __init__(self, server_config_dir="./data/server_configs", ):
+    def __init__(self, server_config_dir="./data/server_configs", storagemanager: StorageManager = None):
 
         #Settings von Initializer Benutzen
         self.settings = settings
+        self.storagemanager: StorageManager = storagemanager
 
         self.base_path: str = get_section("server", "default_path", "../Cloud/running/static")
         self.server_version: str = get_section("server", "version", "not found")
@@ -443,10 +445,23 @@ class Server:
         self.server_properties = properties
 
     def get_uptime(self) -> Optional[str]:
-        if self.start_time and self.is_running:
-            delta = datetime.now() - self.start_time
+        try:
+            if not (self.start_time and self.is_running):
+                return None
+
+            now = datetime.now(timezone.utc)
+            start_time = (self.start_time.replace(tzinfo=timezone.utc)
+                          if self.start_time.tzinfo is None
+                          else self.start_time.astimezone(timezone.utc))
+
+            delta = now - start_time
+            if delta.total_seconds() < 0:
+                return "0:00:00"
+
             return str(delta).split(".")[0]
-        return None
+
+        except Exception:
+            return None
 
     def get_software_info(self) -> str:
         """Gibt die Software-Information als formatierte Zeichenkette zurück"""
