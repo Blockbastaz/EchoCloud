@@ -2,6 +2,7 @@ import secrets
 import threading
 import asyncio
 import json
+from hmac import compare_digest
 from time import struct_time
 from typing import Dict
 from pathlib import Path
@@ -64,6 +65,9 @@ class APIManager:
         self.should_stop: bool = False
 
         self.auth_tokens: Dict[str, str] = self.load_auth_tokens(auth_config_path)
+
+
+        self.admin_token = "reguh9irefguh9greuhgregreuhigeriuhgerguhreigreuhiergiuh"
 
         self.app = FastAPI()
         self.app.add_middleware(
@@ -340,8 +344,10 @@ class APIManager:
         async def ping():
             return JSONResponse({"status": "ok"})
 
-        @self.app.get("/api/servers")
-        async def get_servers():
+        @self.app.get("/api/servers/{auth_token}")
+        async def get_servers(auth_token: str):
+            if not secrets.compare_digest(self.admin_token, auth_token):  # Admin-Token für alle Server
+                raise HTTPException(status_code=401, detail="Auth fehlgeschlagen")
             servers_data = []
             for server in self.server_manager.servers:
                 server_info = {
@@ -368,8 +374,11 @@ class APIManager:
 
             return JSONResponse({"servers": servers_data})
 
-        @self.app.get("/api/server/{server_id}")
-        async def get_server(server_id: str):
+        @self.app.get("/api/server/{server_id}/{auth_token}")
+        async def get_server(server_id: str, auth_token: str):
+            expected_token = self.auth_tokens.get(server_id)
+            if not expected_token or not secrets.compare_digest(expected_token, auth_token):
+                raise HTTPException(status_code=401, detail="Auth fehlgeschlagen")
             server = self.server_manager.get_server_by_id(server_id)
             if not server:
                 raise HTTPException(status_code=404, detail="Server nicht gefunden")
@@ -416,6 +425,86 @@ class APIManager:
                 await self.send_message(server_id, f"Aktion empfangen: {action} von {player_name}")
 
             return JSONResponse({"status": "success", "received": data})
+
+        @self.app.post("/api/storage/{server_id}/{auth_token}")
+        async def storage_endpoint(server_id: str, auth_token: str, request: Request):
+            """
+            Endpoint zum Speichern und Abrufen von Daten über den StorageManager
+
+            POST Body Format:
+            {
+                "action": "store" | "get" | "delete",
+                "key": "storage_key",
+                "data": {...}  // nur bei action="store" erforderlich
+            }
+            """
+            expected_token = self.auth_tokens.get(server_id)
+            if not expected_token or not secrets.compare_digest(expected_token, auth_token):
+                raise HTTPException(status_code=401, detail="Auth fehlgeschlagen")
+
+            try:
+                data = await request.json()
+                action = data.get("action")
+                key = data.get("key")
+
+                if not action or not key:
+                    raise HTTPException(status_code=400,
+                                        detail="Fehlende Parameter: 'action' und 'key' sind erforderlich")
+
+                # Präfix für Server-spezifische Schlüssel
+                storage_key = f"server:{server_id}:{key}"
+
+                if action == "store":
+                    storage_data = data.get("data")
+                    if storage_data is None:
+                        raise HTTPException(status_code=400,
+                                            detail="Fehlender Parameter: 'data' ist für action='store' erforderlich")
+
+                    # Daten speichern
+                    self.storage_manager.store_data(storage_key, storage_data)
+                    pDebug(f"[Storage] Server {server_id} hat Daten unter Schlüssel '{key}' gespeichert")
+
+                    return JSONResponse({
+                        "status": "success",
+                        "action": "store",
+                        "key": key,
+                        "message": "Daten erfolgreich gespeichert"
+                    })
+
+                elif action == "get":
+                    # Daten abrufen
+                    stored_data = self.storage_manager.get_data(storage_key)
+                    pDebug(f"[Storage] Server {server_id} hat Daten unter Schlüssel '{key}' abgerufen")
+
+                    return JSONResponse({
+                        "status": "success",
+                        "action": "get",
+                        "key": key,
+                        "data": stored_data
+                    })
+
+                elif action == "delete":
+                    # Daten durch None überschreiben (löschen)
+                    self.storage_manager.store_data(storage_key, None)
+                    message = "Daten erfolgreich gelöscht"
+
+                    pDebug(f"[Storage] Server {server_id} hat Daten unter Schlüssel '{key}' gelöscht")
+
+                    return JSONResponse({
+                        "status": "success",
+                        "action": "delete",
+                        "key": key,
+                        "message": message
+                    })
+
+                else:
+                    raise HTTPException(status_code=400, detail="Ungültige action. Erlaubt: 'store', 'get', 'delete'")
+
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Ungültiges JSON Format")
+            except Exception as e:
+                pError(f"Fehler im Storage-Endpoint für Server {server_id}: {e}")
+                raise HTTPException(status_code=500, detail=f"Interner Serverfehler: {str(e)}")
 
         @self.app.post("/api/logs/{server_id}/{auth_token}")
         async def log_endpoint(server_id: str, auth_token: str, request: Request):
@@ -568,3 +657,4 @@ class APIManager:
         self.redis = None
         self.redis_pubsub = None
         self.redis_task = None
+

@@ -214,8 +214,6 @@ class StorageManager:
                     else:
                         data = str(data)
 
-                    pInfo(f"H2 Data Type: {type(data)}, Content: {data}")# Gleich Entfernen
-
                 if isinstance(data, str):
                     return json.loads(data)
                 else:

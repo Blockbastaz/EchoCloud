@@ -27,7 +27,7 @@ info "System wird aktualisiert..."
 # sudo apt update && sudo apt upgrade -y
 
 # Benötigt für mysqlclient
-sudo apt install default-libmysqlclient-dev build-essential
+sudo apt install -y default-libmysqlclient-dev build-essential pkg-config libssl-dev python3.12-dev python3-dev
 
 # Python3 & Pakete installieren
 info "Python3 und wichtige Pakete werden installiert..."

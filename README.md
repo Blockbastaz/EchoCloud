@@ -1,6 +1,4 @@
 
----
-
 <p align="center">
   <img src="https://github.com/Blockbastaz/EchoCloud/blob/main/data/logo.png" alt="EchoCloud Logo" width="200"/>
 </p>
@@ -8,161 +6,154 @@
 <h1 align="center">EchoCloud</h1>
 
 <p align="center">
-  <strong>Ein modernes, modulares Server-Management-System für Minecraft-Infrastrukturen mit integrierter API und persistenter Speicherung.</strong><br/>
-  <em>Effizient. Sicher. Erweiterbar.</em>
+  <strong>Modulares Server-Management-System für Minecraft-Infrastrukturen</strong><br/>
+  <em>Effizient • Sicher • Erweiterbar</em>
 </p>
 
 ---
 
-## Übersicht
+## 📖 Übersicht
 
-**EchoCloud** ist ein Python-basiertes CLI- und API-System zur Verwaltung mehrerer Minecraft-Serverinstanzen. Es bietet zentrale Kontrolle, Echtzeitüberwachung und sichere Kommunikation über REST-APIs und WebSockets.
-
----
-
-## Hauptfunktionen
-
-* **Multi-Server-Verwaltung**: Zentrale Kontrolle über mehrere Minecraft-Serverinstanzen
-* **RESTful API**: Sicheres HTTPS-API mit Token-Authentifizierung
-* **WebSocket-Support**: Echtzeit-Kommunikation in beide Richtungen
-* **Persistente Speicherung**: MySQL, MariaDB, PostgreSQL oder H2
-* **Auto-Discovery**: Automatische Servererkennung und -registrierung
-* **Screen-Integration**: Nahtlose Verwaltung von Linux-Screen-Sessions
-* **Rich CLI**: Interaktive Kommandozeile mit Syntax-Highlighting
-* **SSL/TLS-Unterstützung**: Automatische Zertifikatserstellung für sichere Kommunikation
+**EchoCloud** ist ein Python-basiertes CLI- und API-System zur zentralen Verwaltung mehrerer Minecraft-Serverinstanzen.  
+Es bietet Echtzeitüberwachung, sichere Kommunikation, persistente Speicherung und eine modulare Architektur.
 
 ---
 
-## Architektur
+## ⚡ Hauptfunktionen
+
+- 🖥️ **Multi-Server-Verwaltung** – Zentrale Kontrolle über alle Serverinstanzen
+- 🌐 **REST-API & WebSockets** – Echtzeit-Kommunikation zwischen Servern und Cloud
+- 💾 **Persistente Speicherung** – Unterstützt MySQL, MariaDB, PostgreSQL & H2
+- 🧠 **Auto-Discovery** – Automatische Erkennung & Registrierung neuer Server
+- 🖲️ **Serversteuerung per CLI** – Starten, Stoppen & Befehle senden direkt aus der EchoCloud CLI
+- 🧩 **Tab Completion** – Intelligente Autovervollständigung für CLI-Kommandos
+- ⚡ **Crash Detection** – Automatische Erkennung und Meldung nicht mehr antwortender Server
+- 🧮 **Server-Logs in Echtzeit** – Aktuell verfügbar: Join/Leave-Events aller Spieler im Netzwerk
+- 🔐 **Sichere Kommunikation** – HTTPS/WSS mit automatischer Zertifikatserstellung
+- 🖥️ **Screen-Integration** – Nahtlose Verwaltung von Linux-Screen-Sessions
+
+---
+
+## 🧩 Architektur
 
 ```
+
 EchoCloud/
-├── core/                   # Kernmodule
-│   ├── server_manager.py   # Server Lifecycle Management
-│   ├── console.py          # CLI Utilities & Formatierung
-│   └── certgen.py          # SSL-Zertifikatserstellung
-├── commands/               # Kommando-System
-│   └── commandmanager.py   # CLI-Dispatcher
-├── api/                    # API-Ebene
-│   └── apimanager.py       # FastAPI-Server & WebSocket-Handler
-├── utils/                  # Hilfsfunktionen
-│   └── storagemanager.py   # Datenbankabstraktion
-└── config/                 # Konfigurationsdateien
-    └── settings.yaml       # Hauptkonfiguration
-```
+├── core/
+│   ├── server\_manager.py
+│   ├── console.py
+│   └── certgen.py
+├── commands/
+│   └── commandmanager.py
+├── api/
+│   └── apimanager.py
+├── utils/
+│   └── storagemanager.py
+└── config/
+└── settings.yaml
+
+````
 
 ---
 
-## Voraussetzungen
+## ⚙️ Voraussetzungen
 
-* **Python 3.8+**
-* **Linux/Unix**
-* **Java** 
+- **Python 3.8+**
+- **Linux/Unix**
+- **Java**
 
 ---
 
-## Installation
-
-1. Repository klonen:
+## 🚀 Installation
 
 ```bash
 git clone https://github.com/yourusername/EchoCloud.git
 cd EchoCloud
-```
-
-2. Installationsskript ausführbar machen:
-
-```bash
 chmod +x install.sh
-```
-
-3. Installation starten:
-
-```bash
 ./install.sh
-```
+````
 
-4. Server Importieren:
+Automatische Server-Erkennung starten:
 
 ```bash
 autoscan
 ```
 
-> Hinweis: Das Skript installiert notwendige Python-Abhängigkeiten und legt die Standardverzeichnisse für Server und Datenbanken an.
+> Das Skript installiert alle Abhängigkeiten und legt die Standardverzeichnisse für Server und Datenbanken an.
 
 ---
 
-## Konfiguration
+## ⚙️ Konfiguration
 
-Bearbeite die Datei `config/settings.yaml`:
+Bearbeite `config/settings.yaml`:
 
 ```yaml
 server:
   default_path: "../Cloud/running/static"
   version: "paper-1.21.1-133.jar"
-  check_delay: 10            # Intervall des Heartbeats von jedem Server. Dies updatet alle LaufzeitInfos von jedem Server.
+  check_delay: 10
 
 cloud:
-  autoregister: true         # Server aus Standardpfad automatisch registrieren
-  debug_mode: false          # Entwicklernachrichten aktivieren
-  host: "localhost"          # EchoCloud-Adresse
-  port: 9989                 # EchoCloud-Port
+  autoregister: true
+  debug_mode: false
+  host: "localhost"
+  port: 9989
 
 network:
-  use_https: true            # HTTPS für Serverkommunikation aktivieren
-  auto_cert: true            # Zertifikat automatisch generieren
-  auto_api: false            # API automatisch beim Start aktivieren
-  cert_duration_days: 365    # Gültigkeitsdauer des Zertifikats
+  use_https: true
+  auto_cert: true
+  auto_api: false
+  cert_duration_days: 365
   auth_config_path: "./config/auth_tokens.yaml"
   cert_file_path: "./config/cert.pem"
   key_file_path: "./config/key.pem"
 
 storage:
-  storage_type: "h2"          # Optionen: "mysql", "mariadb", "postgresql", "h2"
-  host: "localhost"           # Datenbankhost (nur bei MySQL/MariaDB/PostgreSQL)
-  port: 3306                  # Standardports: MySQL/MariaDB: 3306, PostgreSQL: 5432
-  username: "root"            # Datenbankbenutzer
-  password: "passwort"        # Datenbankpasswort
-  database: "EchoCloud"       # Datenbankname
-  table_name: "json_storage"  # Tabelle für EchoCloud-Daten
-  h2_file_path: "data/"       # Pfad zur H2-Datei
+  storage_type: "h2"
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: "passwort"
+  database: "EchoCloud"
+  table_name: "json_storage"
+  h2_file_path: "data/"
 ```
 
 ---
 
-## Nutzung
+## 💻 Nutzung
 
 ### CLI starten
 
 ```bash
-python main.py
+./run.sh
 ```
 
-#### Kernkommandos
+### Wichtige Kommandos
 
-| Befehl            | Beschreibung                      | Beispiel         |
-|-------------------|-----------------------------------| ---------------- |
-| `servers`         | Liste aller registrierten Server  | `servers`        |
-| `select <server>` | Server für Operationen auswählen  | `select Lobby-1` |
-| `status`          | Detaillierter Serverstatus        | `status`         |
-| `start`           | Ausgewählten Server starten       | `start`          |
-| `stop`            | Ausgewählten Server stoppen       | `stop`           |
-| `logs`            | Server-Logs anzeigen              | `logs`           |
-| `autoscan`        | Neue Server automatisch scannen   | `autoscan`       |
-| `startapi`        | API-Webserver starten             | `startapi`       |
-| `debug`           | Debug-Modus ein-/ausschalten      | `debug`          |
-| `help`            | Alle verfügbaren Befehle anzeigen | `help`           |
-| `exit`            | EchoCloud Stoppen                 | `help`           |
+| Befehl           | Beschreibung                         |
+| ---------------- | ------------------------------------ |
+| `servers`        | Liste aller registrierten Server     |
+| `select <name>`  | Server für Operationen auswählen     |
+| `start` / `stop` | Ausgewählten Server starten/stoppen  |
+| `status`         | Statusinformationen anzeigen         |
+| `logs`           | Echtzeit-Logs (z.B. Join/Leave)      |
+| `autoscan`       | Neue Server automatisch registrieren |
+| `startapi`       | API-Webserver starten                |
+| `debug`          | Debug-Modus ein-/ausschalten         |
+| `help` / `exit`  | Hilfe anzeigen / EchoCloud beenden   |
+
+> 💡 **Neu:** CLI bietet Tab Completion für alle Kommandos!
 
 ---
 
-### API Nutzung
+## 📡 API & WebSocket
 
-#### Authentifizierung
+### Authentifizierung
 
-Jeder Server hat ein eigenes Token in `config/auth_tokens.yaml`. Tokens werden bei der Registrierung automatisch erstellt.
+Tokens werden für jeden Server in `config/auth_tokens.yaml` gespeichert.
 
-#### REST API Beispiel
+**REST API Beispiel**
 
 ```http
 POST /api/plugin/{server_id}/{auth_token}
@@ -175,7 +166,7 @@ Content-Type: application/json
 }
 ```
 
-#### WebSocket Beispiel
+**WebSocket Beispiel**
 
 ```javascript
 const ws = new WebSocket('wss://localhost:9989/ws/server_id/auth_token');
@@ -186,7 +177,7 @@ ws.send(JSON.stringify({
 }));
 ```
 
-#### Health Check
+**Health Check**
 
 ```http
 GET /api/ping
@@ -194,87 +185,41 @@ GET /api/ping
 
 ---
 
-## Datenbankunterstützung
+## 💾 Datenbankoptionen
 
-### H2 (Standard)
-
-Lightweight, dateibasierte Datenbank – ideal für Entwicklung:
-
-```yaml
-storage:
-  storage_type: "h2"
-  h2_file_path: "data/"
-```
-
-### MySQL/MariaDB
-
-Produktionsreife relationale Datenbank:
-
-```yaml
-storage:
-  storage_type: "mysql"  # oder "mariadb"
-  host: "localhost"
-  port: 3306
-  username: "echocloud"
-  password: "secure_password"
-  database: "echocloud_db"
-```
-
-### PostgreSQL
-
-Leistungsstarke Datenbank für große Installationen:
-
-```yaml
-storage:
-  storage_type: "postgresql"
-  host: "localhost"
-  port: 5432
-  username: "echocloud"
-  password: "secure_password"
-  database: "echocloud_db"
-```
+| Typ          | Verwendung                     |
+| ------------ |--------------------------------|
+| `h2`         | Standard (lokale Datei)        |
+| `mysql`      | Produktion (Lightweigt)        |
+| `mariadb`    | Produktion (MySQL-kompatibel)  |
+| `postgresql` | Skalierbar für große Netzwerke |
 
 ---
 
-## Serverstruktur
+## ⚡ Quicklinks: Server-Integration
 
-```
-servers/
-├── ServerType1/
-│   ├── Server-1/
-│   │   ├── run.sh
-│   │   ├── server.properties
-│   │   └── server.jar
-│   └── Server-2/
-└── ServerType2/
-    └── Server-3/
-```
-
-Jeder Serverordner muss enthalten:
-
-* `run.sh`: Startskript mit Screen-Konfiguration
-* `server.properties`: Minecraft-Server-Konfiguration
-* Server-JAR-Datei
+* 📦 [Paper-Integration (Plugin)](https://github.com/Blockbastaz/EchoCloud-Paper)
+* ⚡ [Velocity-Integration (Plugin)](https://github.com/Blockbastaz/EchoCloud-Velocity)
 
 ---
 
-## Sicherheitsfeatures
+## 🛡️ Sicherheit
 
-* **Token-basierte Authentifizierung**: Jeder Server erhält eindeutige Zugangstokens
-* **HTTPS/WSS**: Alle Verbindungen verschlüsselt
-* **Automatisch generierte Zertifikate**: Für Entwicklungszwecke
-* **CORS-Schutz**: Konfigurierbar
-* **Eingabevalidierung**: Alle Anfragen werden geprüft
+* Token-basierte Authentifizierung
+* HTTPS/WSS-Verschlüsselung
+* Automatische Zertifikatserstellung
+* CORS-Schutz
+* Eingabevalidierung aller Requests
 
 ---
 
-## Entwicklung
+## ⚙️ Entwicklung
 
-### Eigene Befehle hinzufügen
+### Eigene Befehle registrieren
 
 ```python
 def cmd_custom(self, args):
-    """Implementierung eines eigenen Befehls"""
+    # Eigener CLI-Befehl
     pass
 
 self.register_command("custom", self.cmd_custom)
@@ -284,35 +229,54 @@ self.add_help_message("custom", "Beschreibung des Kommandos")
 ### Datenbankoperationen
 
 ```python
-# Daten speichern
 storage_manager.store_data("key", {"data": "value"})
-
-# Daten abrufen
 data = storage_manager.get_data("key")
-
-# Daten löschen
 storage_manager.delete_data("key")
 ```
 
 ---
 
-## Mitwirken
+## ⚠️Häufige Fehler
 
-1. Fork des Repositories
-2. Feature-Branch erstellen (`git checkout -b feature/neues-feature`)
-3. Änderungen committen (`git commit -am 'Neues Feature'`)
-4. Branch pushen (`git push origin feature/neues-feature`)
+```
+[*] Fehler im API Manager Loop: Error 111 connecting to 127.0.0.1:6379. Connect call failed ('127.0.0.1', 6379).
+```
+Du hast Redis nicht auf deinem System installiert oder benutzt einen falschen Port/IP.
+So Installierst du Redis auf einem Debian-basierten System:
+
+```bash
+sudo apt install -y redis
+```
+---
+```
+[*] Fehler im API Manager Loop: AUTH <password> called without any password configured for the default user. Are you sure your configuration is correct?
+```
+Du hast kein Passwort in /etc/redis/redis.conf gesetzt. Editiere es mit:
+```bash
+sudo nano /etc/redis/redis.conf
+```
+Füge eine Zeile mit `requirepass DEIN_PASSWORT` hinzu und starte Redis neu:
+```bash
+sudo systemctl restart redis-server
+```
+
+
+---
+
+## 🤝 Mitwirken
+
+1. Fork erstellen
+2. Feature-Branch erstellen: `git checkout -b feature/neues-feature`
+3. Committen: `git commit -am 'Neues Feature'`
+4. Pushen: `git push origin feature/neues-feature`
 5. Pull Request erstellen
 
 ---
 
-## Support
+## 📞 Support
 
-Für Support bitte ein Issue auf GitHub öffnen oder das Entwicklerteam kontaktieren.
-
----
-
-**EchoCloud** – Professionelles Minecraft-Servermanagement einfach gemacht.
+Eröffne ein Issue auf GitHub oder kontaktiere das Entwicklerteam.
 
 ---
+
 
