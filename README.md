@@ -67,7 +67,7 @@ EchoCloud/
 ## 🚀 Installation
 
 ```bash
-git clone https://github.com/yourusername/EchoCloud.git
+git clone https://github.com/Blockbastaz/EchoCloud.git
 cd EchoCloud
 chmod +x install.sh
 ./install.sh
